@@ -1,0 +1,37 @@
+<?xml version="1.0"?> 
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure_9_0.dtd"> 
+   
+<Configure class="org.eclipse.jetty.webapp.WebAppContext">
+    <!--<Configure id="Server" class="org.eclipse.jetty.server.Server"> -->
+ 
+    <!-- Add an EnvEntry only valid for this webapp               -->
+    <New id="gargle"  class="org.eclipse.jetty.plus.jndi.EnvEntry">
+        <Arg>gargle</Arg>
+        <Arg type="java.lang.Double">100</Arg>
+        <Arg type="boolean">true</Arg>
+    </New>
+ 
+    <!-- Add an override for a global EnvEntry                           -->
+    <New id="wiggle"  class="org.eclipse.jetty.plus.jndi.EnvEntry">
+        <Arg>wiggle</Arg>
+        <Arg type="java.lang.Double">55.0</Arg>
+        <Arg type="boolean">true</Arg>
+    </New>
+ 
+    <!-- an XADataSource                                                -->
+    <New id="mysqldatasource" class="org.eclipse.jetty.plus.jndi.Resource">
+        <Arg>jdbc/mysqldatasource</Arg>
+        <Arg>
+            <New class="com.mchange.v2.c3p0.ComboPooledDataSource">
+                <Set name="DriverClass">com.mysql.jdbc.Driver</Set>
+                <Set name="JdbcUrl">jdbc:mysql://localhost:4632/namaraka1?useUnicode=true&amp;characterEncoding=UTF-8</Set>
+                <!--jdbc:mysql://localhost:4632/namaraka1?zeroDateTimeBehavior=convertToNull -->
+                <Set name="User">root</Set>
+                <Set name="Password">Wy5CqNe9</Set>
+                <Set name="minimumPoolSize">5</Set>
+                <Set name="maximumPoolSize">20</Set>
+            </New>
+        </Arg>
+    </New>
+ 
+</Configure>

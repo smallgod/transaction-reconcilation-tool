@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.0" xmlns="http://java.sun.com/xml/ns/javaee" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
+    
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+    
+    <!--<env-entry>
+        <description>location of the hibernate.cfg.xml file</description>
+        <env-entry-name>hibernatePropsFile</env-entry-name>
+        <env-entry-value>/etc/configs/ug/recontool/hibernate.cfg.xml</env-entry-value>
+        <env-entry-type>java.lang.String</env-entry-type>
+    </env-entry>
+    <env-entry>
+        <description>location of the CustomTypes.hbm.xml file</description>
+        <env-entry-name>customTypesPropsFile</env-entry-name>
+        <env-entry-value>/etc/configs/namaraka_dbms/CustomTypes.hbm.xml</env-entry-value>
+        <env-entry-type>java.lang.String</env-entry-type>
+    </env-entry>
+    <env-entry>
+        <description>location of the general app config properties file</description>
+        <env-entry-name>appConfigsPropsFile</env-entry-name>
+        <env-entry-value>/etc/configs/ug/recontool/appconfigs.xml</env-entry-value>
+        <env-entry-type>java.lang.String</env-entry-type>
+    </env-entry>
+    <env-entry>
+        <description>location of log4j properties file</description>
+        <env-entry-name>log4jPropsFile</env-entry-name>
+        <env-entry-value>/etc/configs/ug/recontool/log4j.xml</env-entry-value>
+        <env-entry-type>java.lang.String</env-entry-type>
+    </env-entry>
+    <env-entry>
+        <description>location of xsd files folder</description>
+        <env-entry-name>xsdFolderLoc</env-entry-name>
+        <env-entry-value>/etc/xsdfiles/ug/recontool/</env-entry-value>
+        <env-entry-type>java.lang.String</env-entry-type>
+    </env-entry>-->
+    
+    <servlet>
+        <servlet-name>ErrorResponseHandler</servlet-name>
+        <servlet-class>com.namaraka.recon.errorpage.ErrorResponseHandler</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>UploadFile</servlet-name>
+        <servlet-class>com.namaraka.recon.UploadFile</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>Reconcile</servlet-name>
+        <servlet-class>com.namaraka.recon.Reconcile</servlet-class>
+    </servlet>
+    
+    <servlet>
+        <servlet-name>Progress</servlet-name>
+        <servlet-class>com.namaraka.recon.Progress</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ErrorResponseHandler</servlet-name>
+        <url-pattern>/errorhandler</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>UploadFile</servlet-name>
+        <url-pattern>/uploadfile</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>Reconcile</servlet-name>
+        <url-pattern>/reconcile</url-pattern>
+    </servlet-mapping>
+    <filter>
+        <filter-name>RequestFilter</filter-name>
+        <filter-class>com.namaraka.recon.RequestFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>RequestFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <!--
+        <servlet>
+            <servlet-name>TestSynchronisation</servlet-name>
+            <servlet-class>com.namaraka.recon.TestSynchronisation</servlet-class>
+        </servlet>
+        <servlet-mapping>
+        <servlet-name>TestSynchronisation</servlet-name>
+        <url-pattern>/testsync</url-pattern>
+    </servlet-mapping>-->
+    <servlet-mapping>
+        <servlet-name>Progress</servlet-name>
+        <url-pattern>/progress</url-pattern>
+    </servlet-mapping>
+    <error-page>
+        <exception-type>javax.servlet.ServletException</exception-type>
+        <location>/errorhandler</location>
+    </error-page>
+    <error-page>
+        <location>/errorhandler</location>
+    </error-page>
+    
+        
+    <!-- <resource-ref>
+        <description>Main Database Handler</description>
+        <res-ref-name>jdbc/mysqldatasource</res-ref-name>
+        <res-type>javax.sql.DataSource</res-type>
+        <res-auth>container</res-auth>
+    </resource-ref> -->
+        
+    <listener>
+        <listener-class>
+            com.namaraka.recon.InitApp 
+        </listener-class>
+    </listener>
+</web-app>

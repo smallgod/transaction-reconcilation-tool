@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="unqualified" version="1.0" 
+           targetNamespace="http://namaraka.com/ggserver/config/v1_0" 
+           xmlns:ns1="http://namaraka.com/ggserver/config/v1_0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <!--  Namespace should be same as that of xsd being imported >> Use IMPORT for xsd in different namespaces otherwise use INCLUDE -->
+    <!-- <xs:import namespace="http://namaraka.com/ggserver/model/v1_0" schemaLocation="../CommonTypesBinding/CommonTypes.xsd"/> -->
+   
+    <xs:include schemaLocation="../CommonTypesBinding/CommonTypes.xsd"/>
+        
+    <xs:element name="appconfig">
+        
+        <xs:annotation>
+            <xs:documentation>Application configs properties</xs:documentation>
+        </xs:annotation>
+         
+        <xs:complexType>
+            <xs:all>
+   
+                <xs:element name="conntimeout" type="xs:int"/>
+                <xs:element name="readtimeout" type="xs:int"/>
+                <xs:element name="maxtotalconnections" type="xs:int"/>
+                <xs:element name="connectionsperroute" type="xs:int"/>      
+                <xs:element name="emailalerts" type="xs:string"/>
+                <xs:element name="turnon" type="xs:string"/>
+                <xs:element name="serviceid" type="xs:int"/>
+                <xs:element name="fetchsize" type="xs:int"/>
+                <xs:element name="dbmslayerip" type="xs:string"/>
+                
+                <xs:element name="configfiles">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="log4jprops" type="xs:string"/>
+                            <xs:element name="hibernateprops" type="xs:string"/>
+                            <xs:element name="hibernatecustomtypes" type="xs:string"/>
+                            <xs:element name="xsdfoldername" type="xs:string"/>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+                
+                <xs:element name="schedulers">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="retryfailed" type="ns1:schedulertype"/>
+                            <xs:element name="pickpending" type="ns1:schedulertype"/>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+                
+                
+                <xs:element name="managermethods">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="save" type="xs:string"/>
+                            <xs:element name="read" type="xs:string"/>
+                            <xs:element name="update" type="xs:string"/>
+                            <xs:element name="delete" type="xs:string"/>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+                
+                <xs:element name="nodenames">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="servicerequest" type="xs:string"/>
+                            <xs:element name="paymentrequest" type="xs:string"/>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+    
+                <xs:element name="internalmethods">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element type="xs:string" name="updatestatus"/>
+                            <xs:element type="xs:string" name="fetchtransaction"/>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+    
+                <xs:element name="integrationmethods">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element type="xs:string" name="makepayment"/>
+                            <xs:element type="xs:string" name="maketransfer"/>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+    
+                <xs:element name="allowedips">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element type="xs:string" name="ip" maxOccurs="unbounded" minOccurs="1"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+    
+            </xs:all>
+        </xs:complexType>
+    
+    </xs:element>
+</xs:schema>

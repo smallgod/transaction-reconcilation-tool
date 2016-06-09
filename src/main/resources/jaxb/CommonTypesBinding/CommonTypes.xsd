@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema attributeFormDefault="unqualified" 
+           elementFormDefault="unqualified" 
+           version="1.0" 
+           targetNamespace="http://namaraka.com/ggserver/config/v1_0" 
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:complexType name="credentialstype">
+        <xs:sequence>
+            <xs:element name="username" type="xs:string"/>
+            <xs:element name="password" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="amounttype">
+        <xs:sequence>
+            <xs:element name="amount" type="xs:decimal"/>
+            <xs:element name="currencycode" type="xs:string"/> <!-- foreign key from the currency table e.g UGX -->
+        </xs:sequence>
+    </xs:complexType>
+  
+    <xs:complexType name="extensiontype">
+        <xs:sequence>
+            <xs:any />
+        </xs:sequence>
+    </xs:complexType>
+  
+    <xs:simpleType name="paymentmodetype">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="MOBILE"/>
+            <xs:enumeration value="USSD"/>
+            <xs:enumeration value="WEB"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="sortordertype">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ASC"/>
+            <xs:enumeration value="DESC"/>
+        </xs:restriction>
+    </xs:simpleType>
+  
+    <xs:simpleType name="automatedtype">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="TRUE"/>
+            <xs:enumeration value="FALSE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="paymentstatustype">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="PENDING"/>
+            <xs:enumeration value="COMPLETED"/>
+            <xs:enumeration value="FAILED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="statustype">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="CREATED"/>
+            <xs:enumeration value="PENDING"/>
+            <xs:enumeration value="COMPLETED"/>
+            <xs:enumeration value="FAILED"/>
+            <xs:enumeration value="EXPIRED"/>
+            <xs:enumeration value="UNKNOWN"/>
+        </xs:restriction>
+    </xs:simpleType>
+  
+    <xs:simpleType name="min8String">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="8" />
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="min2String">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="2" />
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:complexType name="commonattributestype">
+        <xs:sequence>            
+            <xs:element name="datecreated" type="xs:dateTime"/>
+            <xs:element name="createdby" type="xs:string"/>
+            <xs:element name="datelastmodified" type="xs:dateTime" minOccurs="0"/>
+            <xs:element name="lastmodifiedby" type="xs:string" minOccurs="0"/>
+            <xs:element name="datemodifiedhistory" type="xs:string" minOccurs="0"/>
+            <xs:element name="modifiedbyhistory" type="xs:string" minOccurs="0"/>
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+        
+    <xs:simpleType name="serviceoptiontype">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="GOODS"/>
+            <xs:enumeration value="SERVICES"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    
+    <xs:simpleType name="systemaccesstype">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="API"/>
+            <xs:enumeration value="UI"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    
+    <xs:complexType name="name">
+        <xs:sequence>
+            <xs:element name="firstname" type="xs:string"/>
+            <xs:element name="secondname" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="schedulertype">
+        <xs:all>
+            <xs:element name="triggername" type="xs:string"/>
+            <xs:element name="jobname" type="xs:string"/>
+            <xs:element name="interval" type="xs:int"/>
+        </xs:all>
+    </xs:complexType>
+       
+    
+</xs:schema>
