@@ -104,6 +104,7 @@ public class AppEntry implements Daemon, ServletContextListener {
             //contexts.setHandlers(new Handler[] { context0, webapp });
             //server.setHandler(contexts);
             //server.setConnectors(new Connector[]{ connector0, connector1, ssl_connector });
+            
             // Extra options
             server.setDumpAfterStart(true);
             server.setDumpBeforeStop(true);

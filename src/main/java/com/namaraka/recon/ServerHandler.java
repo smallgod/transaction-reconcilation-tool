@@ -118,28 +118,23 @@ public class ServerHandler {
      * @return
      */
     Handler getWebAppContextHandlerStaging() {
-        
-        
-        
+
         WebAppContext webAppHandler = new WebAppContext();
 
-             webAppHandler.setContextPath("/recontool");
-            
-            // webAppHandler.setWar(ApplicationPropertyLoader.loadInstance().getJarFolderName() + "/src/main/recontool/war/recontool.war");
-            // webAppHandler.setResourceBase("/home/smallgod/NetBeansProjects/recontool/src/main/recontool/"); //get app dir variable location
-            // webAppHandler.setDescriptor("/home/smallgod/NetBeansProjects/src/main/recontool/WEB-INF/web.xml");
-             
-             //webAppHandler.setResourceBase(ApplicationPropertyLoader.loadInstance().getJarFolderName() + "/src/main/recontool/"); //get app dir variable location
-             webAppHandler.setResourceBase(ApplicationPropertyLoader.loadInstance().getJarFolderName() + "/src/main/recontool/"); //get app dir variable location
-             webAppHandler.setDescriptor(ApplicationPropertyLoader.loadInstance().getJarFolderName() + "/src/main/recontool/WEB-INF/web.xml");
+        webAppHandler.setContextPath("/recontool");
 
-             System.out.println("resource base: " + webAppHandler.getResourceBase());
-             
-            // webAppHandler.setDefaultDescriptor(ApplicationPropertyLoader.loadInstance().getJarFolderName() + "/src/main/recontool/webdefault/webdefault.xml"); //copy from The location is JETTY_HOME/etc/webdefault.xml     
-             webAppHandler.setParentLoaderPriority(true);//make the ClassLoader behavior more akin to standard Java (as opposed to the reverse requirements for Servlets)
+        //webAppHandler.setWar(ApplicationPropertyLoader.loadInstance().getJarFolderName() + "/src/main/recontool/war/recontool.war");
+        //webAppHandler.setResourceBase("/home/smallgod/NetBeansProjects/recontool/src/main/recontool/"); //get app dir variable location
+        //webAppHandler.setDescriptor("/home/smallgod/NetBeansProjects/src/main/recontool/WEB-INF/web.xml");
+        //webAppHandler.setResourceBase(ApplicationPropertyLoader.loadInstance().getJarFolderName() + "/src/main/recontool/"); //get app dir variable location
+        webAppHandler.setResourceBase(ApplicationPropertyLoader.loadInstance().getJarFolderName() + "/src/main/recontool/"); //get app dir variable location
+        webAppHandler.setDescriptor(ApplicationPropertyLoader.loadInstance().getJarFolderName() + "/src/main/recontool/WEB-INF/web.xml");
 
-             
-             
+        System.out.println("resource base: " + webAppHandler.getResourceBase());
+
+        // webAppHandler.setDefaultDescriptor(ApplicationPropertyLoader.loadInstance().getJarFolderName() + "/src/main/recontool/webdefault/webdefault.xml"); //copy from The location is JETTY_HOME/etc/webdefault.xml     
+        webAppHandler.setParentLoaderPriority(true);//make the ClassLoader behavior more akin to standard Java (as opposed to the reverse requirements for Servlets)
+
 //        Configuration configs[] = new Configuration[]{
 //            
 //            new FragmentConfiguration(),
@@ -147,7 +142,6 @@ public class ServerHandler {
 //            new EnvConfiguration()
 //        };
 //        context.setConfigurations(configs);
-
         System.out.println(">>>> Resource base:: " + webAppHandler.getBaseResource() + " and context path: " + webAppHandler.getContextPath());
 
         return webAppHandler;

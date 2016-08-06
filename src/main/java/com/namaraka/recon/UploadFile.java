@@ -49,7 +49,7 @@ public class UploadFile extends HttpServlet implements CallBack {
      *
      * @param request servlet request
      * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
+     * @throws ServletException if sa servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
     protected void processRequest(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
@@ -125,7 +125,7 @@ public class UploadFile extends HttpServlet implements CallBack {
 
             TxnRecordIF reconTransRow = GeneralUtils.addFileFieldsHelper(rowHeaderNames, rowHeaderValues, reportFileDetails, tempSession);
 
-            tempSession.insert(reconTransRow);
+            tempSession.insert(reconTransRow);  
 
             count++;
         }

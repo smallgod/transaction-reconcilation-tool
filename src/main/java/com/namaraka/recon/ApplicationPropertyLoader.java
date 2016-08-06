@@ -59,6 +59,11 @@ public final class ApplicationPropertyLoader implements Serializable {
     private String xsdFolder;
 
     private static final Logger logger = LoggerFactory.getLogger(ApplicationPropertyLoader.class);
+    
+    //work on this mess and put these statics somewhere else since they are used application wide
+    public static String UPLOADS_DIR;
+    public static String RECONCILED_DIR;
+    public static  String TEMP_DIR;
 
     private ApplicationPropertyLoader() {
         loadAllApplicationConfigs(); //called only once
@@ -90,7 +95,7 @@ public final class ApplicationPropertyLoader implements Serializable {
 
         return jarFolder;
     }
-    
+
     public String getXsdFolderName() {
 
         return xsdFolder;
@@ -175,46 +180,57 @@ public final class ApplicationPropertyLoader implements Serializable {
     }
 
     private void loadAllApplicationConfigs() {
-        
-        boolean isTest = Boolean.TRUE;
-        String[] commandLineArgs = null;
+
+        boolean isTest = Boolean.FALSE;
+        String[] commandLineArgs;
 
         try {
 
-            //String[] commandLineArgs = AppEntry.context.getArguments();
+            if (isTest) {
 
-            
-            
-            if (null != commandLineArgs && commandLineArgs.length > 3) {
-
-                profile = commandLineArgs[0]; // this is the first commandline argument defined in the .sh file of this daemon in this case either development, production or ....
-                jarFolder = commandLineArgs[1];
-                configsFolder = commandLineArgs[2];
-                xsdFolder = commandLineArgs[3];
-                
-                
-                
-                System.out.println("Profile: " + profile);
-                System.out.println("jarFolder: " + jarFolder);
-                System.out.println("ConfigsFolder: " + configsFolder);
-
-            } else if(isTest){
-                
                 profile = "development"; // this is the first commandline argument defined in the .sh file of this daemon in this case either development, production or ....
                 jarFolder = "/home/smallgod/NetBeansProjects/recontool/target/recontool-1.0.jar";
                 configsFolder = "/etc/configs/ug/recontool/development/";
                 xsdFolder = "/etc/xsdfiles/ug/recontool/v1_0/";
-                
+
+                UPLOADS_DIR = "/home/smallgod/reconfolder/";
+                RECONCILED_DIR = "/home/smallgod/reconfolder/";
+                TEMP_DIR = "/home/smallgod/tempFiles/";
+
                 System.out.println("Profile: " + profile);
                 System.out.println("jarFolder: " + jarFolder);
                 System.out.println("ConfigsFolder: " + configsFolder);
 
-            }
-                else {
-                System.err.print("Error!! Expected atleast 3 commandline args in the startup script");
-                AppEntry.context.getController().fail(">> Expected atleast 3 commandline args in the startup script");
-                System.exit(1);
-                return;
+            } else {
+
+                commandLineArgs = AppEntry.context.getArguments();
+
+                if (null != commandLineArgs && commandLineArgs.length > 6) {
+
+                    profile = commandLineArgs[0]; // this is the first commandline argument defined in the .sh file of this daemon in this case either development, production or ....
+                    jarFolder = commandLineArgs[1];
+                    configsFolder = commandLineArgs[2];
+                    xsdFolder = commandLineArgs[3];
+
+                    UPLOADS_DIR = commandLineArgs[4];
+                    RECONCILED_DIR = commandLineArgs[5];
+                    TEMP_DIR = commandLineArgs[6];
+
+                    System.out.println("Profile: " + profile);
+                    System.out.println("jarFolder: " + jarFolder);
+                    System.out.println("ConfigsFolder: " + configsFolder);
+                    
+                    System.out.println("uploadsDir: " + UPLOADS_DIR);
+                    System.out.println("reconcileDir: " + RECONCILED_DIR);
+                    System.out.println("tempDir: " + TEMP_DIR);
+                    
+
+                } else {
+                    System.err.print("Error!! Expected atleast 6 commandline args in the startup script");
+                    AppEntry.context.getController().fail(">> Expected atleast 6 commandline args in the startup script");
+                    System.exit(1);
+                    return;
+                }
             }
 
             String appConfigsPath = configsFolder + APPCONFIGS_FILENAME;

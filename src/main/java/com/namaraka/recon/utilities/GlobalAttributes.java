@@ -29,10 +29,10 @@ public class GlobalAttributes {
     
     //for test purposes
     /**/
-    public static final String SAVE_FINAL_DIR = "/home/smallgod/reconfolder/"; //put this in the configs file
-    public static final String READ_DIR =       "/home/smallgod/reconfolder/"; //put this in the configs file
-    public static final String SAVE_DIR =       "/home/smallgod/reconfolder/"; //put this in the configs file
-    public static final String TEMP_DIR =       "/home/smallgod/tempFiles/"; //put this in the configs file
+    //public static final String SAVE_FINAL_DIR = "/home/smallgod/reconfolder/"; //put this in the configs file
+   // public static final String READ_DIR =       "/home/smallgod/reconfolder/"; //put this in the configs file
+    //public static final String SAVE_DIR =       "/home/smallgod/reconfolder/"; //put this in the configs file
+    //public static final String TEMP_DIR =       "/home/smallgod/tempFiles/"; //put this in the configs file
 
     public static final int NUM_ROWS_CHUNK = 10000; //The batch size for number of records to be read at a time
     public static final int INDICATE_AT = 10; //The progress indicator moves every 10 records read

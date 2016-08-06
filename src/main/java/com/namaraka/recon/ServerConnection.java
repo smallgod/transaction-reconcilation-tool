@@ -27,6 +27,7 @@ public class ServerConnection {
     public static final int HTTP_PORT = 9007;
     public static final int HTTPS_PORT = 9005;
     public static final int ADMIN_PORT = 8180;
+    
     public static final int IDLE_TIME = 30000;
     public static final int REQUEST_HEADER_SIZE = 8192;
     public static final int RESPONSE_HEADER_SIZE = 8192;

@@ -11,6 +11,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import com.namaraka.recon.AppEntry;
 import com.namaraka.recon.ApplicationPropertyLoader;
 import com.namaraka.recon.IF.TxnRecordIF;
 import com.namaraka.recon.InitApp;
@@ -995,7 +996,7 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
 
         reportFileDetails.setInvokedByURL(Boolean.TRUE); // a user has invoked this by way of a URL
 
-        String absoluteFilePath = GlobalAttributes.READ_DIR + reportFileDetails.getAbsoluteFilePath(); //using apparoach of mounting folders
+        String absoluteFilePath = ApplicationPropertyLoader.UPLOADS_DIR + reportFileDetails.getAbsoluteFilePath(); //using apparoach of mounting folders
 
         Workbook workBook = FileUtilities.createWorkBook(absoluteFilePath);
         final Sheet sheet = FileUtilities.getSheetAtIndex(workBook, GlobalAttributes.WORKSHEET_INDEX);
@@ -2167,7 +2168,7 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
 
         String formattedTitle = GeneralUtils.replaceSpaces(reportTitleName, "_");
         String dateTimeNow = GeneralUtils.getDateTimeNow("Africa/Kampala", "dd-MM-yyyy-HHmmss");
-        String exceptionsFile = GlobalAttributes.SAVE_FINAL_DIR + formattedTitle + "_" + dateTimeNow + fileExt; // remove this .xls in the near future
+        String exceptionsFile = ApplicationPropertyLoader.RECONCILED_DIR + formattedTitle + "_" + dateTimeNow + fileExt; // remove this .xls in the near future
 
         return exceptionsFile;
 

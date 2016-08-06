@@ -1,46 +1,45 @@
 package com.namaraka.recon.dbaccess;
-//
-//import java.io.BufferedReader;
-//import java.io.IOException;
-//import java.io.InputStream;
-//import java.io.PrintWriter;
-//import java.util.Enumeration;
-//import java.util.concurrent.TimeUnit;
-//import javax.servlet.ServletException;
-//import javax.servlet.http.HttpServlet;
-//import javax.servlet.http.HttpServletRequest;
-//import javax.servlet.http.HttpServletResponse;
-//import com.namaraka.dbms.utils.EmptyStringException;
-//import com.namaraka.dbms.utils.GeneralUtils;
-//import com.namaraka.dbms.utils.Security;
-//import com.namaraka.recon.ApplicationPropertyLoader;
-//import com.namaraka.recon.config.v1_0.Appconfig;
-//import com.namaraka.recon.utilities.BindXmlAndPojo;
-//import com.namaraka.recon.utilities.DBMSXMLObject;
-//import java.util.List;
-//import javax.xml.bind.JAXBException;
-//import org.apache.http.HttpEntity;
-//import org.apache.http.HttpResponse;
-//import org.apache.http.client.HttpClient;
-//import org.apache.http.client.methods.HttpPost;
-//import org.apache.http.impl.client.HttpClientBuilder;
-//import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
-//import org.w3c.dom.Document;
-//import org.w3c.dom.Element;
-//import org.w3c.dom.Node;
-//import org.w3c.dom.NodeList;
-//import org.xml.sax.SAXException;
-//
-///**
-// *
-// * @author smallGod
-// */
-//public class DBAccessController extends HttpServlet {
-//
-//    private static final Logger logger = LoggerFactory.getLogger(DBAccessController.class);
-//    private static final long serialVersionUID = 2639052820480879305L;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.util.Enumeration;
+import java.util.concurrent.TimeUnit;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import com.namaraka.recon.ApplicationPropertyLoader;
+import com.namaraka.recon.config.v1_0.Appconfig;
+import com.namaraka.recon.utilities.BindXmlAndPojo;
+import com.namaraka.recon.utilities.DBMSXMLObject;
+import com.namaraka.recon.utilities.GeneralUtils;
+import com.namaraka.recon.utilities.Processeable;
+import java.util.List;
+import javax.xml.bind.JAXBException;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+/**
+ *
+ * @author smallGod
+ */
+public class DBAccessController extends HttpServlet {
+
+    private static final Logger logger = LoggerFactory.getLogger(DBAccessController.class);
+    private static final long serialVersionUID = 2639052820480879305L;
 //    private final Appconfig props = ApplicationPropertyLoader.getInstance().getAppProps();
 //
 //    private static PoolingHttpClientConnectionManager connectionManager;
@@ -100,6 +99,7 @@ package com.namaraka.recon.dbaccess;
 //        }
 //
 //        DBMSXMLObject hibernateObject;
+//        
 //        try {
 //            hibernateObject = BindXmlAndPojo.xmlToObject(xmlRequest, Servicerequest.class);
 //        } catch (JAXBException | SAXException | NullPointerException exc) {
@@ -371,12 +371,13 @@ package com.namaraka.recon.dbaccess;
 //        connectionManager = new PoolingHttpClientConnectionManager();
 //        connectionManager.setDefaultMaxPerRoute(5);
 //        connectionManager.closeExpiredConnections();
-//        // Optionally, close connections that have been idle longer than 30 sec
+//        //Optionally, close connections that have been idle longer than 30 sec
 //        connectionManager.closeIdleConnections(30, TimeUnit.SECONDS);
 //        httpclient = HttpClientBuilder.create().setConnectionManager(connectionManager).build();
 //
 //        //new IdleConnectionMonitorThread(connectionManager).run();
 //        return httpclient;
+//        
 //    }
 //
 //    void validateBizLogicRequest(HttpServletRequest request) {
@@ -486,99 +487,95 @@ package com.namaraka.recon.dbaccess;
 //        return isWritten;
 //
 //    }
-//
-//    /*private boolean updateBeepAndBank(String beepMessageContent) {
-//
-//     String finalStatusCode = null;
-//     String statusDescript = null;
-//     boolean isChangeStatus = false; //flag when we need to change a txn from ACCEPTED to REJECTED perhaps due to an SDP timeout
-//     String bankCode = null;
-//     String payerTxnID = null;
-//     //transaction has not failed in between before reaching bank, for example wrong username/password at Cellulant prompting 'contact cellulant support'
-//     boolean txnPushedToBank = true;
-//     boolean isToBeReversedAtBank = false;
-//     boolean isToBeAcknowledgedAtBAnk = true;
-//
-//     logger.info("going to build the BEEPAckPayload object with: " + beepMessageContent);
-//     BEEPAckPayLoad beepAckPayload = Utilities.generateBeepAckPayload(beepMessageContent);
-//
-//     logger.info("original statuscode  : " + beepAckPayload.getOriginalStatusCode());
-//     logger.info("original status desc : " + beepAckPayload.getOriginalStatusDesc());
-//
-//     //maintain the status code as it is (successful or failed) but align it to the status codes BEEP core understands e.g. props.getACCEPTED_STATUS()
-//     if (beepAckPayload.getOriginalStatusCode().equalsIgnoreCase(props.getC2BTxnPushed2BankCode())) {
-//     //change the final status to a status BEEP core understands, leave the original status intact - as u got it from the recievePay API
-//     beepAckPayload.setFinalStatusCode(String.valueOf(props.getACCEPTED_STATUS()));
-//     } else if (beepAckPayload.getOriginalStatusCode().equalsIgnoreCase(props.getC2BTxnFailureAtBAnk())) {
-//     logger.info("C2B Push txn pushed to bank but NOT successful");
-//     beepAckPayload.setFinalStatusCode(String.valueOf(props.getREJECTED_STATUS()));
-//     //isToBeAcknowledgedAtBAnk = false; //do not bother acknowledging this txn at bank since txn hit bank but Failed
-//     // we should acknowledge this transaction so that CSL can know when to send an SMS to the customer with final status
-//     } else {
-//     beepAckPayload.setFinalStatusCode(String.valueOf(props.getREJECTED_STATUS()));
-//     }
-//
-//     //let through to MTN i.e. no timeout
-//     if (letThroughTheMessage) {
-//     logger.info("Payment response has been let through to MTN with original status code/desc");
-//     //maintain the status description for the final same as the original description
-//     beepAckPayload.setFinalStatusDesc(beepAckPayload.getOriginalStatusDesc());
-//
-//     } else {
-//
-//     logger.info("letThroughMessage is FALSE");
-//
-//     finalStatusCode = String.valueOf(props.getREJECTED_STATUS());
-//     statusDescript = props.getMTNSDPTimeoutNarration();
-//     isChangeStatus = true;
-//
-//     //only reverse successful transactions
-//     if ((beepAckPayload.getOriginalStatusCode().equalsIgnoreCase(props.getC2BTxnPushed2BankCode()))) {
-//     logger.info("Transaction status NOT recieved by MTN, so reversing at bank side");
-//     isToBeReversedAtBank = true;
-//     }
-//     }
-//
-//     //first check if the transaction reached the bank
-//     if (txnPushedToBank) {
-//
-//     logger.info("calling C2B status notification API for transaction with payer trxnID: " + beepAckPayload.getPayerTransactionID());
-//
-//     bankCode = props.getBankIDArray()[beepAckPayload.getPropsFilePosition()];
-//     payerTxnID = beepAckPayload.getPayerTransactionID();
-//
-//     //if txn treached bank and was successful acknowledge it, otherwise no need to acknowledge it
-//     if (isToBeAcknowledgedAtBAnk) {
-//     logger.info("About to acknowledge this transaction status with the bank");
-//     Runnable c2bStatusBankNotifyTask = Utilities.notifyC2BPayStatusUpdateFile(bankCode, payerTxnID, isToBeReversedAtBank);
-//     MTNWebserviceDaemon.shortLivedTaskExecService.execute(c2bStatusBankNotifyTask);
-//     }
-//
-//                
-//     try {
-//     Thread.sleep(10000L);
-//     } catch (InterruptedException ex) {
-//     logger.info("thread sleep exception: " + ex.getMessage());
-//     }
-//
-//     Runnable acknowledgeTask = Utilities.acknowledgeTxnAndUpdateFile(beepAckPayload, finalStatusCode, statusDescript, isChangeStatus, true);
-//     MTNWebserviceDaemon.shortLivedTaskExecService.execute(acknowledgeTask);
-//
-//     } else {
-//
-//     logger.info("-------------------------------------------------------------------");
-//     logger.info("Transaction not posted to the bank, so no need to acknowledge it");
-//     logger.info("statusCode at Cellulant : " + beepAckPayload.getOriginalStatusCode());
-//     logger.info("statusDesc at Cellulant : " + beepAckPayload.getOriginalStatusDesc());
-//     logger.info("-------------------------------------------------------------------");
-//     }
-//
-//        
-//
-//     return letThroughTheMessage;
-//     }*/
-//}
 
-public class DBAccessController{
-    
+    /*private boolean updateBeepAndBank(String beepMessageContent) {
+
+     String finalStatusCode = null;
+     String statusDescript = null;
+     boolean isChangeStatus = false; //flag when we need to change a txn from ACCEPTED to REJECTED perhaps due to an SDP timeout
+     String bankCode = null;
+     String payerTxnID = null;
+     //transaction has not failed in between before reaching bank, for example wrong username/password at Cellulant prompting 'contact cellulant support'
+     boolean txnPushedToBank = true;
+     boolean isToBeReversedAtBank = false;
+     boolean isToBeAcknowledgedAtBAnk = true;
+
+     logger.info("going to build the BEEPAckPayload object with: " + beepMessageContent);
+     BEEPAckPayLoad beepAckPayload = Utilities.generateBeepAckPayload(beepMessageContent);
+
+     logger.info("original statuscode  : " + beepAckPayload.getOriginalStatusCode());
+     logger.info("original status desc : " + beepAckPayload.getOriginalStatusDesc());
+
+     //maintain the status code as it is (successful or failed) but align it to the status codes BEEP core understands e.g. props.getACCEPTED_STATUS()
+     if (beepAckPayload.getOriginalStatusCode().equalsIgnoreCase(props.getC2BTxnPushed2BankCode())) {
+     //change the final status to a status BEEP core understands, leave the original status intact - as u got it from the recievePay API
+     beepAckPayload.setFinalStatusCode(String.valueOf(props.getACCEPTED_STATUS()));
+     } else if (beepAckPayload.getOriginalStatusCode().equalsIgnoreCase(props.getC2BTxnFailureAtBAnk())) {
+     logger.info("C2B Push txn pushed to bank but NOT successful");
+     beepAckPayload.setFinalStatusCode(String.valueOf(props.getREJECTED_STATUS()));
+     //isToBeAcknowledgedAtBAnk = false; //do not bother acknowledging this txn at bank since txn hit bank but Failed
+     // we should acknowledge this transaction so that CSL can know when to send an SMS to the customer with final status
+     } else {
+     beepAckPayload.setFinalStatusCode(String.valueOf(props.getREJECTED_STATUS()));
+     }
+
+     //let through to MTN i.e. no timeout
+     if (letThroughTheMessage) {
+     logger.info("Payment response has been let through to MTN with original status code/desc");
+     //maintain the status description for the final same as the original description
+     beepAckPayload.setFinalStatusDesc(beepAckPayload.getOriginalStatusDesc());
+
+     } else {
+
+     logger.info("letThroughMessage is FALSE");
+
+     finalStatusCode = String.valueOf(props.getREJECTED_STATUS());
+     statusDescript = props.getMTNSDPTimeoutNarration();
+     isChangeStatus = true;
+
+     //only reverse successful transactions
+     if ((beepAckPayload.getOriginalStatusCode().equalsIgnoreCase(props.getC2BTxnPushed2BankCode()))) {
+     logger.info("Transaction status NOT recieved by MTN, so reversing at bank side");
+     isToBeReversedAtBank = true;
+     }
+     }
+
+     //first check if the transaction reached the bank
+     if (txnPushedToBank) {
+
+     logger.info("calling C2B status notification API for transaction with payer trxnID: " + beepAckPayload.getPayerTransactionID());
+
+     bankCode = props.getBankIDArray()[beepAckPayload.getPropsFilePosition()];
+     payerTxnID = beepAckPayload.getPayerTransactionID();
+
+     //if txn treached bank and was successful acknowledge it, otherwise no need to acknowledge it
+     if (isToBeAcknowledgedAtBAnk) {
+     logger.info("About to acknowledge this transaction status with the bank");
+     Runnable c2bStatusBankNotifyTask = Utilities.notifyC2BPayStatusUpdateFile(bankCode, payerTxnID, isToBeReversedAtBank);
+     MTNWebserviceDaemon.shortLivedTaskExecService.execute(c2bStatusBankNotifyTask);
+     }
+
+                
+     try {
+     Thread.sleep(10000L);
+     } catch (InterruptedException ex) {
+     logger.info("thread sleep exception: " + ex.getMessage());
+     }
+
+     Runnable acknowledgeTask = Utilities.acknowledgeTxnAndUpdateFile(beepAckPayload, finalStatusCode, statusDescript, isChangeStatus, true);
+     MTNWebserviceDaemon.shortLivedTaskExecService.execute(acknowledgeTask);
+
+     } else {
+
+     logger.info("-------------------------------------------------------------------");
+     logger.info("Transaction not posted to the bank, so no need to acknowledge it");
+     logger.info("statusCode at Cellulant : " + beepAckPayload.getOriginalStatusCode());
+     logger.info("statusDesc at Cellulant : " + beepAckPayload.getOriginalStatusDesc());
+     logger.info("-------------------------------------------------------------------");
+     }
+
+        
+
+     return letThroughTheMessage;
+     }*/
 }

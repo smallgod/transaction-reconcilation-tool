@@ -7,6 +7,7 @@ package com.namaraka.recon.unused;
 
 import com.namaraka.recon.model.v1_0.ReportDetails;
 import com.google.gson.reflect.TypeToken;
+import com.namaraka.recon.ApplicationPropertyLoader;
 import com.namaraka.recon.IF.TxnRecordIF;
 import com.namaraka.recon.constants.CenteServiceType;
 import com.namaraka.recon.constants.ElmaField;
@@ -91,8 +92,8 @@ public class FileReader implements CallBack {
 
         String formattedReconTitle = GeneralUtils.replaceSpaces(reconTitle, "_");
         String dateTimeNow = GeneralUtils.getDateTimeNow("Africa/Kampala", "dd-MM-yyyy-HHmmss");
-        String absReconFinalFileName = GlobalAttributes.SAVE_FINAL_DIR + formattedReconTitle + "_" + dateTimeNow + GlobalAttributes.FILE_EXT_XLS; // remove this .xls in the near future
-        String absExceptionsReconFinalFileName = GlobalAttributes.SAVE_FINAL_DIR + formattedReconTitle + "_exceptions_" + dateTimeNow + GlobalAttributes.FILE_EXT_XLS; // remove this .xls in the near future
+        String absReconFinalFileName = ApplicationPropertyLoader.RECONCILED_DIR + formattedReconTitle + "_" + dateTimeNow + GlobalAttributes.FILE_EXT_XLS; // remove this .xls in the near future
+        String absExceptionsReconFinalFileName = ApplicationPropertyLoader.RECONCILED_DIR + formattedReconTitle + "_exceptions_" + dateTimeNow + GlobalAttributes.FILE_EXT_XLS; // remove this .xls in the near future
 
         reconDetailsTable.setFinalReconFileName(absReconFinalFileName);
         reconDetailsTable.setFinalExceptionsReconFileName(absExceptionsReconFinalFileName);

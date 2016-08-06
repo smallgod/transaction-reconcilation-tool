@@ -6,6 +6,7 @@
 package com.namaraka.recon.utilities;
 
 import com.google.gson.reflect.TypeToken;
+import com.namaraka.recon.ApplicationPropertyLoader;
 import com.namaraka.recon.IF.FileProcessingObserved;
 import com.namaraka.recon.IF.FileProcessingObserver;
 import com.namaraka.recon.NewReconStarted;
@@ -103,8 +104,8 @@ public class ReadFileTask implements Runnable, FileProcessingObserver {
             
             logger.debug("====================== Entering first synchronised block ========================= " + reportFileDetails.getFileID());
 
-            String oldFileName = GlobalAttributes.READ_DIR + reportFileDetails.getFileName();
-            String newFileName = GlobalAttributes.TEMP_DIR;
+            String oldFileName = ApplicationPropertyLoader.UPLOADS_DIR + reportFileDetails.getFileName();
+            String newFileName = ApplicationPropertyLoader.TEMP_DIR;
 
             final String fileExtension = FileUtilities.getFileExtension(oldFileName);
 

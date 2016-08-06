@@ -14,7 +14,6 @@ import com.namaraka.recon.model.v1_0.ReconTransactionsTable;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Iterator;
-import javassist.compiler.MemberResolver.Method;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,5 +141,4 @@ public class AuditTrailInterceptor extends EmptyInterceptor {
             logger.debug("val: " + currentState[index]);
         }
     }
-
 }
