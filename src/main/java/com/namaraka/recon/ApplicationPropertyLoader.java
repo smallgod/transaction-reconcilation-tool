@@ -5,6 +5,7 @@
  */
 package com.namaraka.recon;
 
+import com.namaraka.recon.AppEntry;
 import com.namaraka.recon.config.v1_0.Appconfig;
 import com.namaraka.recon.utilities.AuditTrailInterceptor;
 import com.namaraka.recon.utilities.BindXmlAndPojo;
@@ -287,7 +288,7 @@ public final class ApplicationPropertyLoader implements Serializable {
         }
     }
 
-    protected void closeHibernateSessionFactory() {
+    public void closeHibernateSessionFactory() {
 
         if (getSessionFactory() != null && !getSessionFactory().isClosed()) {
             getSessionFactory().close();

@@ -47,7 +47,7 @@ public class ServerHandler {
      *
      * @return
      */
-    Handler getResourceHandler() {
+    public Handler getResourceHandler() {
 
         ResourceHandler resourceHandler = new ResourceHandler();
         resourceHandler.setDirectoriesListed(true);
@@ -69,7 +69,7 @@ public class ServerHandler {
      *
      * @return
      */
-    Handler getContextHandler() {
+    public Handler getContextHandler() {
 
         ContextHandler contextHandler = new ContextHandler();
         contextHandler.setContextPath("/hello");
@@ -84,7 +84,7 @@ public class ServerHandler {
      *
      * @return
      */
-    Handler getServletContextHandler() {
+    public Handler getServletContextHandler() {
 
         ServletContextHandler servletHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
         servletHandler.setContextPath("/context");
@@ -102,7 +102,7 @@ public class ServerHandler {
      *
      * @return
      */
-    Handler getWebAppContextHandlerProd() {
+    public Handler getWebAppContextHandlerProd() {
 
         WebAppContext webapp = new WebAppContext();
         webapp.setContextPath("/");
@@ -117,7 +117,7 @@ public class ServerHandler {
      *
      * @return
      */
-    Handler getWebAppContextHandlerStaging() {
+    public Handler getWebAppContextHandlerStaging() {
 
         WebAppContext webAppHandler = new WebAppContext();
 

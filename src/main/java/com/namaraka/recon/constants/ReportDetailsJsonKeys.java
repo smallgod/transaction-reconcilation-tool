@@ -23,7 +23,7 @@ public enum ReportDetailsJsonKeys implements Constants {
     LINK_ID_COL_NAME("linkidlabel"),
     STATUS_COL_NAME("status"),
     FILENAME("filename"),
-    //FILEPATH("filepath"), //file path minus the mount point
+    FILEPATH("filepath"), //file path minus the mount point
     PENDING_VALUE("pending"),
     SUCCESS_VALUE("success"),
     FAILED_VALUE("failed"),

@@ -18,9 +18,11 @@ public interface FileProcessingObserved {
     public void unregister(FileProcessingObserver observer);
      
     //method to notify observers of change
-    public void notifyObservers() throws MyCustomException;
+    public void  notifyObservers() throws MyCustomException;
      
     //method to get updates from subject
     public Object getUpdate(FileProcessingObserver observer);
+    
+    public void unregisterAllObservers();
     
 }

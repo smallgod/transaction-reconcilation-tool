@@ -19,7 +19,6 @@ import com.namaraka.recon.model.v1_0.ReconciliationDetails;
 import com.namaraka.recon.utilities.GeneralUtils;
 import com.namaraka.recon.utilities.GlobalAttributes;
 import com.namaraka.recon.utilities.WriteFileTask;
-import com.namaraka.recon.utilities.WriteFileTaskOLD;
 import com.namaraka.recon.utilities.WriteMutexClass;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -48,10 +47,10 @@ public class Reconcile extends HttpServlet {
 
     private static final Type stringMapType = new TypeToken<Map<String, Object>>() {
     }.getType();
-    private static final Type stringArrayType = new TypeToken<String[]>() {
-    }.getType();
-    private static final Type collectionType = new TypeToken<Collection<String>>() {
-    }.getType();
+    
+    //private static final Type stringArrayType = new TypeToken<String[]>() { }.getType();
+    //private static final Type collectionType = new TypeToken<Collection<String>>() {  }.getType();
+    //private static final Type listType = new TypeToken<ArrayList<String>>() {}.getType();
 
     private List<FileProcessingObserver> observers;
 
@@ -73,7 +72,6 @@ public class Reconcile extends HttpServlet {
             String recontitle = "";
             ReconcileCmd action = ReconcileCmd.START;
             boolean isCalling = false;
-            List<String> callingFilesList = null;
             String callingFilesJson = "";
 
             final String fileDetailsJsonString = GeneralUtils.getJsonStringFromRequest(request);
@@ -111,9 +109,10 @@ public class Reconcile extends HttpServlet {
                         break;
 
                     case CALLING_FILES:
-
-                        callingFilesList = (ArrayList<String>) jsonValue;  //json got like so - {"200", "201"}
-                        callingFilesJson = GeneralUtils.convertToJson(jsonValue, collectionType);
+                        
+                        //callingFilesList = (ArrayList<String>) jsonValue;  //json got like so - {"1579-1580":"333", "201":"3444"}
+                        //callingFilesJson = GeneralUtils.convertToJson(jsonValue, collectionType);
+                        callingFilesJson = GeneralUtils.convertToJson(jsonValue, stringMapType);
 
                         break;
 
@@ -130,12 +129,24 @@ public class Reconcile extends HttpServlet {
                     //throw new Mycustom
                 }
 
-                //for synchronisation, ideally this guys should only be initialised once
+                //for synchronisation, ideally these guys should only be initialised once
                 GlobalAttributes.writeMutexObjects.put(reconGroupID, new WriteMutexClass(reconGroupID));
 
                 GeneralUtils.initGlobalMap(GlobalAttributes.fileWriteProgressIndicator, reconGroupID);
                 GeneralUtils.initGlobalMap(GlobalAttributes.totalReconciledToBeWritten, reconGroupID);
                 GeneralUtils.initGlobalMap(GlobalAttributes.exceptionsCount, reconGroupID);
+                
+                logger.info("Going to setup map for reconCompleted!!!");
+                //recon for this id has just started
+                
+                try{
+                    String reconCompleted = String.valueOf(Boolean.FALSE);
+                    GlobalAttributes.reconCompleted.put(reconGroupID, reconCompleted);
+                }catch(Exception ex){
+                    logger.error("error occurred: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
+                logger.info("DOne setting up mapfor reconCompleted!!!");
 
                 //start/end time
                 //total exceptions
@@ -159,99 +170,131 @@ public class Reconcile extends HttpServlet {
 
                 Thread.sleep(3000L); //just wait a little bit to notify observers so that they can get done with what they are doing
 
+                
+                //initiate and save the new recon
+                ReconciliationDetails reconDetails = new ReconciliationDetails();
+                reconDetails.setIsCalling(isCalling);
+                reconDetails.setCallingFiles(callingFilesJson);
+                reconDetails.setReconStatus(ReconStatus.NEW);
+                reconDetails.setReconGroupID(reconGroupID);
+                
                 //calling this method will notify all observers that it is okay to write if reading ALL files is complete
-                ReconciliationDetails reconDetails = GlobalAttributes.newReconStarted.saveNewRecon(reconGroupID, callingFilesJson);
+                //ReconciliationDetails reconDetails = GlobalAttributes.newReconStarted.saveNewRecon(reconGroupID, callingFilesJson);
+                
+                GlobalAttributes.newReconStarted.saveNewRecon(reconDetails);
                 GlobalAttributes.reconDetailsStore.put(reconGroupID, reconDetails);
+                
+                logger.debug("Recon details noted, observers will be notified as well, going to return now!!");
 
                 // Let's NOT write here, the observers will write
                 //writeFiles(reconDetails);
-                return;
+                //return;
 
             } else if (action == ReconcileCmd.CANCEL) {
 
-                return;
-            }
-            
-            
-            
-            
-            
+                try (PrintWriter out = response.getWriter()) {
 
-            if (reconGroupID == null || reconGroupID.isEmpty()) {
-                logger.error("ReconGroup ID is NULL or Empty");
-                return;
-                //throw new Mycustom
-            }
-
-            List<?> reconDetailsList = DBManager.getRecordsEqualToPropertyValue(ReconciliationDetails.class, "reconGroupID", reconGroupID);
-
-            try (PrintWriter out = response.getWriter()) {
-
-                if (reconDetailsList.isEmpty()) {
-                    out.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><ns2:oliwakabiboyi version=\"1.0\" xmlns:ns2=\"http://reconpro.namara.com\"><obubaka>oli bikyi boyiii, man eyooo recon teliiyooooo</obubaka></ns2:oliwakabiboyi>");
+                    out.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><ns2:oliwakabiboyi version=\"1.0\" xmlns:ns2=\"http://reconpro.namara.com\"><obubaka>Naaye maani, these cancel requests, ehhhh we will see about them later, twakooowaaa!!</obubaka></ns2:oliwakabiboyi>");
                     out.close();
-
-                    logger.error("No such Reconciliation group exists - provide valid reconID");
-                    throw new MyCustomException("Failed to start Recon", ErrorCode.BAD_REQUEST_ERR, "Reconciliation cannot start - failed to find matching recon for ID: " + reconGroupID, ErrorCategory.CLIENT_ERR_TYPE);
-
-                } else {
-
-                    out.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><ns2:oliwakabiboyi version=\"1.0\" xmlns:ns2=\"http://reconpro.namara.com\"><obubaka>Kyikyi Tooto? oli steady papa!!</obubaka></ns2:oliwakabiboyi>");
                 }
+                logger.info("Cancel Recon method called!!");
+                 //InitApp.getFileUploadExecService().shutdownNow();
+                 //GeneralUtils.removeReconDetailsFromGlobalMaps(reconGroupID);
+                //return;
+                
+            } else{
+                
+                try (PrintWriter out = response.getWriter()) {
 
-                out.close();
-            }
-
-            //ReconcileRequest reconcileRequest = new ReconcileRequest(action, reconGroupID, isCalling);
-            final ReconciliationDetails reconDetails = (ReconciliationDetails) reconDetailsList.get(0);
-
-            //reconDetails.setCallingFiles(callingFilesList);
-            reconDetails.setIsCalling(isCalling);
-            reconDetails.setAction(action);
-
-            DBManager.updateDatabaseModel(reconDetails);
-
-            GlobalAttributes.reconDetailsStore.put(reconGroupID, reconDetails);
-
-            try {
-
-                if (action == ReconcileCmd.START) {
-
-                    ReconStatus reconProgress = reconDetails.getReconStatus();
-
-                    if (reconProgress == ReconStatus.NEW) { // progress MUST have not been set - should be NEW then we update it to INVOKED
-
-                        //reconDetails.setNoOfFilesInReconGroup(numOfFiles); //set the number of files in this recongroup
-                        //updateReconProgress(reconDetails, ReconStatus.INVOKED);
-                        logger.info("updated recon progress to INVOKED>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ::: " + reconDetails.getReconStatus());
-
-                        //GlobalAttributes.setNewValue(reconGroupID, numOfFiles, GlobalAttributes.numberOfFilesInRecon);
-                        //GlobalAttributes.setReconTimeTracker(Boolean.TRUE, reconGroupID, GlobalAttributes.totalReconTimeTracker);
-                    } else {
-                        logger.warn("Recon with ID: " + reconGroupID + " Can't START - current state is either already COMPLETED or in NON-suitable status to start");
-                        return;
-                    }
-
-                    logger.info(">>>>>>>>>>>>>>>>>>>>> About to call writeFileTask to execute <<<<<<<<<<<<<<<<<<<<<");
-                    //Runnable writeFileTask = new WriteFileTaskOLD(reconDetails, Boolean.TRUE);
-                    //GeneralUtils.executeTask(writeFileTask); //no need to synchronize here 
-                    
-                    Runnable writeFileTask = new WriteFileTask(reconDetails);
-                    GeneralUtils.executeTask(writeFileTask); //no need to synchronize here 
-
-
-                    logger.info(">>>>>>>>>>>>>>>>>>>>>  Going to reconcile LinkedFILE");
-                    GeneralUtils.reconcileLinkedFile(reconGroupID); //make sure if there is a LINKED file in this report, it is reconciled
-
-                } else if (action == ReconcileCmd.CANCEL) {
-
-                    //InitApp.getFileUploadExecService().shutdownNow();
-                    GeneralUtils.removeReconDetailsFromGlobalMaps(reconGroupID);
+                    out.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><ns2:oliwakabiboyi version=\"1.0\" xmlns:ns2=\"http://reconpro.namara.com\"><obubaka>You guy, we never agreed on this reconcile action, so papa, deal with it!!</obubaka></ns2:oliwakabiboyi>");
+                    out.close();
                 }
-
-            } catch (MyCustomException ex) {
-                throw new ServletException("CustomException", ex);
+                
+                       
+                logger.info("Uknown reconcile action: " + action);
             }
+   
+            
+            //logger.info("<<<<<<<<<<We have gone beyond the other weird, if - else if with return conditions>>>>>>");
+            
+            
+            
+
+//            if (reconGroupID == null || reconGroupID.isEmpty()) {
+//                logger.error("ReconGroup ID is NULL or Empty");
+//                return;
+//                //throw new Mycustom
+//            }
+//
+//            List<?> reconDetailsList = DBManager.getRecordsEqualToPropertyValue(ReconciliationDetails.class, "reconGroupID", reconGroupID);
+//
+//            try (PrintWriter out = response.getWriter()) {
+//
+//                if (reconDetailsList.isEmpty()) {
+//                    out.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><ns2:oliwakabiboyi version=\"1.0\" xmlns:ns2=\"http://reconpro.namara.com\"><obubaka>oli bikyi boyiii, man eyooo recon teliiyooooo</obubaka></ns2:oliwakabiboyi>");
+//                    out.close();
+//
+//                    logger.error("No such Reconciliation group exists - provide valid reconID");
+//                    throw new MyCustomException("Failed to start Recon", ErrorCode.BAD_REQUEST_ERR, "Reconciliation cannot start - failed to find matching recon for ID: " + reconGroupID, ErrorCategory.CLIENT_ERR_TYPE);
+//
+//                } else {
+//
+//                    out.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><ns2:oliwakabiboyi version=\"1.0\" xmlns:ns2=\"http://reconpro.namara.com\"><obubaka>Kyikyi Tooto? oli steady papa!!</obubaka></ns2:oliwakabiboyi>");
+//                }
+//
+//                out.close();
+//            }
+//
+//            //ReconcileRequest reconcileRequest = new ReconcileRequest(action, reconGroupID, isCalling);
+//            final ReconciliationDetails reconDetails = (ReconciliationDetails) reconDetailsList.get(0);
+//
+//            //reconDetails.setCallingFiles(callingFilesList);
+//            reconDetails.setIsCalling(isCalling);
+//            reconDetails.setAction(action);
+//
+//            DBManager.updateDatabaseModel(reconDetails);
+//
+//            GlobalAttributes.reconDetailsStore.put(reconGroupID, reconDetails);
+//
+//            try {
+//
+//                if (action == ReconcileCmd.START) {
+//
+//                    ReconStatus reconProgress = reconDetails.getReconStatus();
+//
+//                    if (reconProgress == ReconStatus.NEW) { // progress MUST have not been set - should be NEW then we update it to INVOKED
+//
+//                        //reconDetails.setNoOfFilesInReconGroup(numOfFiles); //set the number of files in this recongroup
+//                        //updateReconProgress(reconDetails, ReconStatus.INVOKED);
+//                        logger.info("updated recon progress to INVOKED>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ::: " + reconDetails.getReconStatus());
+//
+//                        //GlobalAttributes.setNewValue(reconGroupID, numOfFiles, GlobalAttributes.numberOfFilesInRecon);
+//                        //GlobalAttributes.setReconTimeTracker(Boolean.TRUE, reconGroupID, GlobalAttributes.totalReconTimeTracker);
+//                    } else {
+//                        logger.warn("Recon with ID: " + reconGroupID + " Can't START - current state is either already COMPLETED or in NON-suitable status to start");
+//                        return;
+//                    }
+//
+//                    logger.info(">>>>>>>>>>>>>>>>>>>>> About to call writeFileTask to execute <<<<<<<<<<<<<<<<<<<<<");
+//                    //Runnable writeFileTask = new WriteFileTaskOLD(reconDetails, Boolean.TRUE);
+//                    //GeneralUtils.executeTask(writeFileTask); //no need to synchronize here 
+//                    
+//                    Runnable writeFileTask = new WriteFileTask(reconDetails);
+//                    GeneralUtils.executeTask(writeFileTask); //no need to synchronize here 
+//
+//
+//                    logger.info(">>>>>>>>>>>>>>>>>>>>>  Going to reconcile LinkedFILE");
+//                    GeneralUtils.reconcileLinkedFile(reconGroupID); //make sure if there is a LINKED file in this report, it is reconciled
+//
+//                } else if (action == ReconcileCmd.CANCEL) {
+//
+//                    //InitApp.getFileUploadExecService().shutdownNow();
+//                    GeneralUtils.removeReconDetailsFromGlobalMaps(reconGroupID);
+//                }
+//
+//            } catch (MyCustomException ex) {
+//                throw new ServletException("CustomException", ex);
+//            }
 
             if (response.isCommitted()) {
                 logger.info("Response committed!!");
@@ -259,14 +302,15 @@ public class Reconcile extends HttpServlet {
                 logger.info("Response NOT committed!!");
             }
 
+
         } catch (MyCustomException ex) {
             logger.error("An error is thrown here (string) :: " + ex.toString());
             logger.error("An error is thrown here          :: " + ex.getErrorDetails());
             throw new ServletException("CustomException", ex);
-        } catch (JsonSyntaxException | NullPointerException | IOException | ServletException ex) {
+        } catch (JsonSyntaxException | NullPointerException | IOException ex) {
 
             //organise the chaos here with handling exceptions
-            //logger.error("error here: " + ex.getMessage());
+            logger.error("error here: " + ex.getMessage());
             ex.printStackTrace();
             //throw new MyCustomException("NPE", ErrorCode.SERVER_ERR, "NullPointerException reading CSV file: " + ex.getMessage(), ErrorCategory.SERVER_ERR_TYPE);
 
@@ -274,6 +318,8 @@ public class Reconcile extends HttpServlet {
             ex.printStackTrace();
             //throw new MyCustomException("NPE", ErrorCode.SERVER_ERR, "NullPointerException reading CSV file: " + ex.getMessage(), ErrorCategory.SERVER_ERR_TYPE);
         }
+        
+        return;
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">

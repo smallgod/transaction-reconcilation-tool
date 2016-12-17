@@ -162,70 +162,70 @@ public class FileReader implements CallBack {
      * @param reportFileDetails
      * @throws MyCustomException
      */
-    public void reconcileFile(ReportDetails reportFileDetails) throws MyCustomException {
-
-        ReconciliationDetails reconDetails = saveReportAndReconDetails(reportFileDetails);
-        //String entityUsed = reconDetailsTable.getReconEntityName().trim();
-        //reportFileDetails.setTempEntityName(entityUsed); //temporarily store the entity name in the report details object
-        DateTime timeNow = new DateTime();
-
-        synchronized (GlobalAttributes.readMutexObjects.get(reportFileDetails.getReconGroupID())) {
-
-            try {
-
-                //if db table size is 0 for a particular report file keyID, this is the first file we are writing to that table so we wont need to do any checks for existing txns
-                //long numOfRecordsInDB = DBManager.countRecords(reportFileDetails.getTempEntityName());
-                //long numOfRecordsInDB = DBManager.countRecords(ReconTransactionsTable.class, "reportFileKeyID", reportFileDetails.getId());
-                //List<ReportDetails> reportFileDetailsKeyIDList = DBManager.fetchOnlyColumn(ReportDetails.class, "id", "reconGroupID", reportFileDetails.getReconGroupID());
-                //long numOfRecordsInDB = DBManager.countRecords(ReconTransactionsTable.class, "reportFileKeyID", reportFileDetailsKeyIDList);
-                long numOfRecordsInDB = DBManager.countRecords(ReconTransactionsTable.class, "reconGroupID", reportFileDetails.getReconGroupID());
-
-                if (numOfRecordsInDB == -1) {
-                    logger.warn("error occurred trying to get the row count of entity: " + reportFileDetails.getTempEntityName());
-                }
-
-                int recordsIterated = DBManager.insertOrUpdateRecord(this, reportFileDetails, numOfRecordsInDB);
-
-                //file recon COMPLETED
-                GeneralUtils.setFileReconProgressHelper(reportFileDetails, "fileID", FileReconProgressEnum.COMPLETED);
-
-                //GlobalFileProcessAttributes.totalNumberRecordsIterated += recordsIterated;
-                GlobalAttributes.increment(reportFileDetails.getReconGroupID(), recordsIterated, GlobalAttributes.totalNumberRecordsIterated);
-
-                logger.info("\n\n========================================== End of this Reconciliation ========================================\n");
-                
-                logger.info("Number of records iterated : " + recordsIterated + " \n");
-                logger.info("ReconGroup ID              : " + reportFileDetails.getReconGroupID() + " \n");
-                logger.info("Recon file Name            : " + reportFileDetails.getFileName() + " \n");
-                logger.info("Records found in DB before : " + numOfRecordsInDB + " \n");
-                logger.info("Recon Total time (plus thread wait time) : " + GeneralUtils.timeTakenToNow(timeNow) + " \n\n");
-
-                logger.info("GlobalTotalRecords for reconID - " + reportFileDetails.getReconGroupID() + ": " + GlobalAttributes.totalUnreconciledRecords.get(reportFileDetails.getReconGroupID()).get());
-                
-                ReconStatus totalReconProgress = reconDetails.getReconStatus();                
-                
-                logger.info(">>>>>> RECON PROGRESS INSIDE RECONCILE_FILE() method: " + totalReconProgress + " <<<<<<<<<<<<");
-
-                if (totalReconProgress != ReconStatus.COMPLETED) {
-                    //start the recon if & only if other files are done and reconcile button has been clicked
-                    Runnable writeFileTask = new WriteFileTaskOLD(reconDetails, Boolean.FALSE);
-                    GeneralUtils.executeTask(writeFileTask); //no need to synchronize here 
-                }
-
-            } catch (NullPointerException npe) {
-                npe.printStackTrace();
-                logger.error("NullPointerException: " + npe.getMessage());
-            } catch (IllegalArgumentException ex) {
-                ex.printStackTrace();
-                logger.error("IllegalArgumentException: " + ex.getMessage());
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                logger.error("Exception: " + ex.getCause().getMessage());
-            }
-        }
-
-        logger.info("Coming out of Synchronised section!!!");
-    }
+//    public void reconcileFile(ReportDetails reportFileDetails) throws MyCustomException {
+//
+//        ReconciliationDetails reconDetails = saveReportAndReconDetails(reportFileDetails);
+//        //String entityUsed = reconDetailsTable.getReconEntityName().trim();
+//        //reportFileDetails.setTempEntityName(entityUsed); //temporarily store the entity name in the report details object
+//        DateTime timeNow = new DateTime();
+//
+//        synchronized (GlobalAttributes.readMutexObjects.get(reportFileDetails.getReconGroupID())) {
+//
+//            try {
+//
+//                //if db table size is 0 for a particular report file keyID, this is the first file we are writing to that table so we wont need to do any checks for existing txns
+//                //long numOfRecordsInDB = DBManager.countRecords(reportFileDetails.getTempEntityName());
+//                //long numOfRecordsInDB = DBManager.countRecords(ReconTransactionsTable.class, "reportFileKeyID", reportFileDetails.getId());
+//                //List<ReportDetails> reportFileDetailsKeyIDList = DBManager.fetchOnlyColumn(ReportDetails.class, "id", "reconGroupID", reportFileDetails.getReconGroupID());
+//                //long numOfRecordsInDB = DBManager.countRecords(ReconTransactionsTable.class, "reportFileKeyID", reportFileDetailsKeyIDList);
+//                long numOfRecordsInDB = DBManager.countRecords(ReconTransactionsTable.class, "reconGroupID", reportFileDetails.getReconGroupID());
+//
+//                if (numOfRecordsInDB == -1) {
+//                    logger.warn("error occurred trying to get the row count of entity: " + reportFileDetails.getTempEntityName());
+//                }
+//
+//                int recordsIterated = DBManager.insertOrUpdateRecord(this, reportFileDetails, numOfRecordsInDB);
+//
+//                //file recon COMPLETED
+//                GeneralUtils.setFileReconProgressHelper(reportFileDetails, "fileID", FileReconProgressEnum.COMPLETED);
+//
+//                //GlobalFileProcessAttributes.totalNumberRecordsIterated += recordsIterated;
+//                GlobalAttributes.increment(reportFileDetails.getReconGroupID(), recordsIterated, GlobalAttributes.totalNumberRecordsIterated);
+//
+//                logger.info("\n\n========================================== End of this Reconciliation ========================================\n");
+//                
+//                logger.info("Number of records iterated : " + recordsIterated + " \n");
+//                logger.info("ReconGroup ID              : " + reportFileDetails.getReconGroupID() + " \n");
+//                logger.info("Recon file Name            : " + reportFileDetails.getFileName() + " \n");
+//                logger.info("Records found in DB before : " + numOfRecordsInDB + " \n");
+//                logger.info("Recon Total time (plus thread wait time) : " + GeneralUtils.timeTakenToNow(timeNow) + " \n\n");
+//
+//                logger.info("GlobalTotalRecords for reconID - " + reportFileDetails.getReconGroupID() + ": " + GlobalAttributes.totalUnreconciledRecords.get(reportFileDetails.getReconGroupID()).get());
+//                
+//                ReconStatus totalReconProgress = reconDetails.getReconStatus();                
+//                
+//                logger.info(">>>>>> RECON PROGRESS INSIDE RECONCILE_FILE() method: " + totalReconProgress + " <<<<<<<<<<<<");
+//
+//                if (totalReconProgress != ReconStatus.COMPLETED) {
+//                    //start the recon if & only if other files are done and reconcile button has been clicked
+//                    Runnable writeFileTask = new WriteFileTaskOLD(reconDetails, Boolean.FALSE);
+//                    GeneralUtils.executeTask(writeFileTask); //no need to synchronize here 
+//                }
+//
+//            } catch (NullPointerException npe) {
+//                npe.printStackTrace();
+//                logger.error("NullPointerException: " + npe.getMessage());
+//            } catch (IllegalArgumentException ex) {
+//                ex.printStackTrace();
+//                logger.error("IllegalArgumentException: " + ex.getMessage());
+//            } catch (Exception ex) {
+//                ex.printStackTrace();
+//                logger.error("Exception: " + ex.getCause().getMessage());
+//            }
+//        }
+//
+//        logger.info("Coming out of Synchronised section!!!");
+//    }
 
     @Override
     public void execute(Object data) {

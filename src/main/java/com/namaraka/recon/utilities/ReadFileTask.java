@@ -80,28 +80,39 @@ public class ReadFileTask implements Runnable, FileProcessingObserver {
      */
     private void readFile() throws MyCustomException {
 
-        final LinkType linkType = reportFileDetails.getLinkType();
-        final String reconGroupID = reportFileDetails.getReconGroupID();
+        synchronized (GlobalAttributes.READ_MUTEX) {
 
-        if (linkType != LinkType.LINKER) {
-            reportFileDetails.setIsToBeReconciled(Boolean.TRUE); //Will be read into the Temp Recon DB
-            GlobalAttributes.increment(reconGroupID, GlobalAttributes.numberOfFilesInRecon);
-        } else {
-            reportFileDetails.setIsToBeReconciled(Boolean.FALSE);
-        }
+            final LinkType linkType = reportFileDetails.getLinkType();
+            final String reconGroupID = reportFileDetails.getReconGroupID();
 
-        //save ReportDetails
-        DBManager.persistDatabaseModel(reportFileDetails);
+            if (linkType != LinkType.LINKER) {
 
-        //register observer to the subject
-        GlobalAttributes.newReconStarted.register(this);
+                //Read this file into the temporary recon Table
+                reportFileDetails.setIsToBeReconciled(Boolean.TRUE);
+                GlobalAttributes.increment(reconGroupID, GlobalAttributes.numberOfFilesInRecon);
 
-        //attach observer to subject
-        this.setSubject(GlobalAttributes.newReconStarted);
+                logger.debug("file NOT a Linker, so Read into Temp Recon Table & increment, GlobalAttributes.numberOfFilesInRecon by 1");
+            } else {
 
-        //synchronized (GlobalAttributes.getReadMutex(reconGroupID)) {
-        synchronized (GlobalAttributes.MUTEX) { // correct this line to use the correct MUTEX such as the line below
-            
+                logger.debug("File is a Linker, we will reconcile it later, now now");
+
+                reportFileDetails.setIsToBeReconciled(Boolean.FALSE);
+            }
+
+            //save ReportDetails
+            DBManager.persistDatabaseModel(reportFileDetails);
+
+            //register observer to the subject
+            GlobalAttributes.newReconStarted.register(this);
+
+            logger.debug("REgistering obzerver here for fileID:: " + reportFileDetails.getFileID());
+
+            //attach observer to subject
+            //this (ReadFileTask) is the observer, GlobalAttributes.newReconStarted is the Subject
+            this.setSubject(GlobalAttributes.newReconStarted);
+
+            //synchronized (GlobalAttributes.getReadMutex(reconGroupID)) {
+            //synchronized (GlobalAttributes.READ_MUTEX) { // correct this line to use the correct MUTEX such as the line below
             logger.debug("====================== Entering first synchronised block ========================= " + reportFileDetails.getFileID());
 
             String oldFileName = ApplicationPropertyLoader.UPLOADS_DIR + reportFileDetails.getFileName();
@@ -111,8 +122,12 @@ public class ReadFileTask implements Runnable, FileProcessingObserver {
 
             if (fileExtension.equalsIgnoreCase(FileExtension.CSV.getValue())) {
 
-                newFileName += FileUtilities.getFileNameAndType(oldFileName);
+                //since we are dealing with CSV, just read from uploads folder
+                newFileName = oldFileName;
 
+                //newFileName += FileUtilities.getFileNameAndType(oldFileName);
+                //copy csv file from original location to our temp folder
+                //FileUtilities.copyFile(new File(oldFileName), new File(newFileName));
             } else {
 
                 String newAbsoluteFileName = FileUtilities.changeFileTypeToCSV(oldFileName, FileExtension.CSV.getValue());
@@ -137,21 +152,19 @@ public class ReadFileTask implements Runnable, FileProcessingObserver {
             //update ReportDetails
             DBManager.updateDatabaseModel(reportFileDetails);
 
-            logger.debug("OLD fileName ::: " + reportFileDetails.getAbsoluteFilePath());
-            logger.debug("NEW fileName ::: " + reportFileDetails.getCsvEquivalentFile());
+            logger.debug("OLD fileName     : " + reportFileDetails.getAbsoluteFilePath());
+            logger.debug("NEW fileName     : " + reportFileDetails.getCsvEquivalentFile());
+            logger.debug("Number of Records: " + numberOfRecords);
 
-            logger.debug("========================= Coming out of first synchronised block ===================== " + reportFileDetails.getFileID());
-        }
-
-        //synchronized (GlobalAttributes.getReadMutex(reconGroupID)) {
-        synchronized (GlobalAttributes.MUTEX) {
-
+            //logger.debug("========================= Coming out of first synchronised block ===================== " + reportFileDetails.getFileID());
+            //}
+            //synchronized (GlobalAttributes.getReadMutex(reconGroupID)) {
+            //synchronized (GlobalAttributes.READ_MUTEX) {
             //we will lock here on the same MUTEX as the 
-            //WRITE MUTEX because this block a Write task should only attempt to run
+            //WRITE MUTEX because this block, a Write task should only attempt to run,
             //only if there is no Running READ File task - hope it makes sense
             //No point in this method running while a READ File task is ongoing
-            logger.debug(" ================ Entering Second synchronised block================ " + reportFileDetails.getFileID());
-
+            //logger.debug(" ================ Entering Second synchronised block================ " + reportFileDetails.getFileID());
             if (linkType == LinkType.LINKED || linkType == LinkType.LINKER) {
 
                 List<ReportDetails> reportFromDBList = getReportDetailsForLinkType(linkType, reconGroupID);
@@ -173,6 +186,8 @@ public class ReadFileTask implements Runnable, FileProcessingObserver {
                 }
 
                 return;
+            } else {
+                logger.debug("Linker Type is Neither, Linker Nor Linked");
             }
 
             readInCSVFile(reportFileDetails);
@@ -213,6 +228,7 @@ public class ReadFileTask implements Runnable, FileProcessingObserver {
             linkTypeToQuery = LinkType.LINKER;
 
         } else {
+
             linkTypeToQuery = LinkType.LINKED;
         }
 
@@ -444,32 +460,15 @@ public class ReadFileTask implements Runnable, FileProcessingObserver {
     @Override
     public void startRecon() throws MyCustomException {
 
-        logger.info("Observer (ReadFileTask) of fileID: " + this.reportFileDetails.getFileID() + " has been called!!");
-
+        
         ReconciliationDetails reconDetails = (ReconciliationDetails) newReconObserved.getUpdate(this);
+        
+        logger.info("Observer, fileID: " + this.reportFileDetails.getFileID() + " reconID: " + reconDetails.getReconGroupID() + " - reconName: " +  reconDetails.getReconName() + " - has been called to startRecon!!");
 
-        if (reconDetails == null) {
 
-            logger.info("Reconciliation writing not started Recon is NULL");
+        WriteFileTask writeTask = new WriteFileTask(reconDetails);
+        Future future = GeneralUtils.executeTask(writeTask);
 
-        } else {
-
-            String reconGroupID = reconDetails.getReconGroupID();
-
-            //get the latest reconDetails object from the DB - the one passed is subject to changing status to INPROGRESS by other threads
-            ReconStatus reconStatus = GeneralUtils.getReconProgressFromDB(reconGroupID);
-
-            if (reconStatus == ReconStatus.NEW) {
-
-                //try to write
-                WriteFileTask writeTask = new WriteFileTask(reconDetails);
-                Future future = GeneralUtils.executeTask(writeTask);
-
-            } else {
-                logger.info("Recon already in PROGRES or COMPLETED - : " + reconStatus + " -> Another observer already handling this or DONE");
-                //next observer will try to handle this write request
-            }
-        }
     }
 
     @Override

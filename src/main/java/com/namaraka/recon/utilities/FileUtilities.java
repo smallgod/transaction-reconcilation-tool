@@ -28,6 +28,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -85,7 +87,7 @@ public class FileUtilities {
 
         //String command = "ping -c 3 www.google.com";
         String createFile = "touch %s";
-            String formattedCmd1 = String.format(createFile, outputFile);
+        String formattedCmd1 = String.format(createFile, outputFile);
         String conversionCmd = "ssconvert --export-type=Gnumeric_stf:stf_csv %s %s";
         String formattedCmd = String.format(conversionCmd, inputFile, outputFile);
 
@@ -132,12 +134,12 @@ public class FileUtilities {
         try {
             // build the system command we want to run
             List<String> commands = new ArrayList<>();
-            
+
             String createFile = "touch %s";
             String formattedCmd1 = String.format(createFile, outputFile);
             String conversionCmd = "ssconvert --export-type=Gnumeric_stf:stf_csv %s %s";
             String formattedCmd2 = String.format(conversionCmd, inputFile, outputFile);
-            
+
             //commands.add("/bin/sh");
             commands.add(formattedCmd1);
             commands.add(formattedCmd2);
@@ -193,6 +195,8 @@ public class FileUtilities {
             throw new MyCustomException("NullPointer Exception", ErrorCode.NOT_SUPPORTED_ERR, "Failed to get file Extension", ErrorCategory.CLIENT_ERR_TYPE);
         }
 
+        logger.info("File Extension got: " + fileExtension);
+
         return fileExtension.trim();
     }
 
@@ -232,6 +236,17 @@ public class FileUtilities {
         String fileNameAndType = absoluteFileName.substring(indexOfFileName + 1).trim();
 
         return fileNameAndType;
+    }
+
+    /**
+     *
+     * @param source
+     * @param dest
+     * @throws IOException
+     */
+    public static void copyFile(File source, File dest) throws IOException {
+        
+        Files.copy(source.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 
     /**

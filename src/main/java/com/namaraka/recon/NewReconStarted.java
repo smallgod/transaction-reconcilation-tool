@@ -11,6 +11,7 @@ import com.namaraka.recon.constants.ReconStatus;
 import com.namaraka.recon.dbaccess.DBManager;
 import com.namaraka.recon.exceptiontype.MyCustomException;
 import com.namaraka.recon.model.v1_0.ReconciliationDetails;
+import com.namaraka.recon.utilities.GlobalAttributes;
 import com.namaraka.recon.utilities.ReadFileTask;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +23,9 @@ import org.slf4j.LoggerFactory;
  * @author smallgod
  */
 public class NewReconStarted implements FileProcessingObserved {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(NewReconStarted.class);
 
-    private final Object MUTEX = new Object();
     private final List<FileProcessingObserver> observers;
     private boolean saveReconCalled;
     private ReconciliationDetails reconDetails;
@@ -35,70 +35,103 @@ public class NewReconStarted implements FileProcessingObserved {
         this.observers = new ArrayList<>();
     }
 
-    ReconciliationDetails saveNewRecon(final String reconGroupID, final String callingFilesJson) throws MyCustomException {
+    public void saveNewRecon(ReconciliationDetails reconDetails) throws MyCustomException {
 
-        reconDetails = new ReconciliationDetails();
-
-        reconDetails.setCallingFiles(callingFilesJson);
-        reconDetails.setReconStatus(ReconStatus.NEW);
-        reconDetails.setReconGroupID(reconGroupID);
-
+        this.reconDetails = reconDetails;
         DBManager.persistDatabaseModel(reconDetails);
 
         this.saveReconCalled = Boolean.TRUE;
+
+        //Once SaveNewRecon has been called, we can safely notify all Observers and hence call their startRecon methods
         notifyObservers();
 
-        return reconDetails;
+        logger.debug("New Recon saved in DB with status - NEW and all observers notified to call their startRecon methods");
     }
 
+//    public ReconciliationDetails saveNewRecon(final String reconGroupID, final String callingFilesJson) throws MyCustomException {
+//
+//        reconDetails = new ReconciliationDetails();
+//
+//        reconDetails.setCallingFiles(callingFilesJson);
+//        reconDetails.setReconStatus(ReconStatus.NEW);
+//        reconDetails.setReconGroupID(reconGroupID);
+//
+//        DBManager.persistDatabaseModel(reconDetails);
+//
+//        this.saveReconCalled = Boolean.TRUE;
+//        
+//        //Once SaveNewRecon has been called, we can safely notify all Observers and hence call their startRecon methods
+//        notifyObservers();
+//        
+//        logger.debug("New Recon saved in DB with status - NEW and all observers notified to call their startRecon methods");
+//
+//        return reconDetails;
+//    }
     @Override
-    public void register(FileProcessingObserver observer) {
+    public synchronized void register(FileProcessingObserver observer) {
 
-        if (observer == null) {
-            throw new NullPointerException("Null Observer");
-        }
-        synchronized (MUTEX) {
-            if (!observers.contains(observer)) {
+        synchronized (GlobalAttributes.OBSERVER_MUTEX) {
+
+            if (observer == null) {
+                throw new NullPointerException("Null Observer");
+            } else if (!observers.contains(observer)) {
+
+                logger.info("Here adding an obzerver!!");
                 observers.add(observer);
+            } else {
+                logger.info("NOT adding observing since it is already added!!");
             }
         }
     }
 
     @Override
-    public void unregister(FileProcessingObserver observer) {
+    public synchronized void unregister(FileProcessingObserver observer) {
 
-        synchronized (MUTEX) {
+        synchronized (GlobalAttributes.OBSERVER_MUTEX) {
             observers.remove(observer);
+        }
+    }
+    
+    @Override
+    public synchronized void unregisterAllObservers() {
+
+        synchronized (GlobalAttributes.OBSERVER_MUTEX) {
+            
+            if(observers != null){
+                observers.clear();
+            }
         }
     }
 
     @Override
-    public void notifyObservers() throws MyCustomException{
+    public synchronized void notifyObservers() throws MyCustomException {
 
-        List<FileProcessingObserver> observersLocal = null;
-        //synchronization is used to make sure any observer registered after message is received is not notified
-        synchronized (MUTEX) {
+        synchronized (GlobalAttributes.OBSERVER_MUTEX) {
+
+            List<FileProcessingObserver> observersLocal = null;
+            //synchronization is used to make sure any observer registered after message is received is not notified
+
             if (!saveReconCalled) {
                 return;
             }
             observersLocal = new ArrayList<>(this.observers);
             this.saveReconCalled = false;
+
+            logger.info(">>>> Going to notify: " + observersLocal.size() + " observerz");
+
+            for (FileProcessingObserver obj : observersLocal) {
+                obj.startRecon();
+
+                logger.info("Observer with FileID: " + ((ReadFileTask) obj).getReportFileDetails().getFileID() + " has been notified to startRecon, successfuly");
+            }
+
+            logger.info(">>>> DONE notifying ALL observerz to startRecon");
+
         }
-        
-        logger.info(">>>> Going to notify: " + observersLocal.size() + " observerz");
-        
-        for (FileProcessingObserver obj : observersLocal) {
-            obj.startRecon(); 
-            
-            logger.info("Observer with FileID: " + ((ReadFileTask)obj).getReportFileDetails().getFileID() + " has been notified successfuly");
-        }
-        
-        logger.info(">>>> DONE notifying ALL observerz to startRecon");
     }
 
     @Override
     public Object getUpdate(FileProcessingObserver observer) {
         return this.reconDetails;
     }
-
 }

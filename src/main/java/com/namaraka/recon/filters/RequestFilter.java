@@ -3,9 +3,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.namaraka.recon;
+package com.namaraka.recon.filters;
 
-import com.namaraka.recon.utilities.GlobalAttributes;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -120,6 +119,7 @@ public class RequestFilter implements Filter {
             chain.doFilter(request, response);
         } catch (Throwable t) {
             logger.error("chain filter through an error");
+            logger.error("This is the error: " + t.getMessage());
             // If an exception is thrown somewhere down the filter chain,
             // we still want to execute our after processing, and then
             // rethrow the problem after that.

@@ -69,7 +69,7 @@
     </servlet-mapping>
     <filter>
         <filter-name>RequestFilter</filter-name>
-        <filter-class>com.namaraka.recon.RequestFilter</filter-class>
+        <filter-class>com.namaraka.recon.filters.RequestFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter-mapping>

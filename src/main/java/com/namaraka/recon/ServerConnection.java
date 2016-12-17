@@ -84,7 +84,7 @@ public class ServerConnection {
      * @param server
      * @return 
      */
-    Connector getDefaultConnector(Server server) {
+    public Connector getDefaultConnector(Server server) {
 
         ServerConnector httpDefaultConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
         httpDefaultConnector.setPort(HTTP_PORT);
@@ -99,7 +99,7 @@ public class ServerConnection {
      * @return
      * @throws FileNotFoundException 
      */
-    Connector getHTTPSConnector(Server server) throws FileNotFoundException {
+    public Connector getHTTPSConnector(Server server) throws FileNotFoundException {
 
         HttpConfiguration httpsConfig = new HttpConfiguration(httpConfig);
         httpsConfig.addCustomizer(new SecureRequestCustomizer());
@@ -128,7 +128,7 @@ public class ServerConnection {
      * @param server
      * @return 
      */
-    Connector getAdminDefaultConnector(Server server) {
+    public Connector getAdminDefaultConnector(Server server) {
 
         ServerConnector adminDefaultConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
         adminDefaultConnector.setPort(ADMIN_PORT);

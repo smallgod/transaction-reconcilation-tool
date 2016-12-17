@@ -61,6 +61,8 @@ public class AppEntry implements Daemon, ServletContextListener {
 
             //Log.setLog(new Slf4jLog());
             processorService = Executors.newSingleThreadExecutor();
+            
+            
 
             //has the actual worker threads that are going to be processing payments
             //paymentProcessor = new PaymentProcessor();

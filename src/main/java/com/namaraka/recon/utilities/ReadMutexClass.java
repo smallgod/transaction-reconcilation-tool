@@ -13,7 +13,7 @@ public final class ReadMutexClass {
 
     private final String MUTEX;
 
-    public ReadMutexClass(String mutex) {
+    public ReadMutexClass(final String mutex) {
         this.MUTEX = mutex;
     }
 

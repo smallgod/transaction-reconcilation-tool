@@ -6,7 +6,9 @@
 package com.namaraka.recon.utilities;
 
 import com.namaraka.recon.NewReconStarted;
+import com.namaraka.recon.feedback.ReconProgress;
 import com.namaraka.recon.model.v1_0.ReconciliationDetails;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,15 +27,13 @@ public class GlobalAttributes {
     public static final String SAVE_FINAL_DIR = "/home/smallgod/NetBeansProjects/recontool/web/WEB-INF/reconfolder/final_files/"; //put this in the configs file
     public static final String SAVE_DIR =       "/home/smallgod/NetBeansProjects/recontool/web/WEB-INF/reconfolder/final_files/"; //put this in the configs file
     public static final String TEMP_DIR =       "/srv/applications/namaraka/tempFiles/"; //put this in the configs file
-    */
-    
+     */
     //for test purposes
     /**/
     //public static final String SAVE_FINAL_DIR = "/home/smallgod/reconfolder/"; //put this in the configs file
-   // public static final String READ_DIR =       "/home/smallgod/reconfolder/"; //put this in the configs file
+    // public static final String READ_DIR =       "/home/smallgod/reconfolder/"; //put this in the configs file
     //public static final String SAVE_DIR =       "/home/smallgod/reconfolder/"; //put this in the configs file
     //public static final String TEMP_DIR =       "/home/smallgod/tempFiles/"; //put this in the configs file
-
     public static final int NUM_ROWS_CHUNK = 10000; //The batch size for number of records to be read at a time
     public static final int INDICATE_AT = 10; //The progress indicator moves every 10 records read
     public static final int HIBERNATE_JDBC_BATCH = 30; //same as the JDBC batch size in the hibernate config xml config file
@@ -44,8 +44,10 @@ public class GlobalAttributes {
      */
     public static Map<String, String> linkMap = new HashMap<>();
 
-    public static final String READ_MUTEX = "";
-    //public static final String WRITE_MUTEX = "";
+    //public static final String MUTEX = "MUTEX";
+    public static final String READ_MUTEX = "READ_MUTEX";
+    public static final String WRITE_MUTEX = "WRITE_MUTEX";
+    public static final String OBSERVER_MUTEX = "OBSERVER_MUTEX";
     public static String allRecordsAbsFinalFilePath = "";
     public static String OnlyExceptionsAbsFinalFilePath = "";
 
@@ -89,26 +91,70 @@ public class GlobalAttributes {
     public static final ConcurrentHashMap<String, AtomicInteger> exceptionsCount = new ConcurrentHashMap<>();
 
     public static final ConcurrentHashMap<String, AtomicInteger> numberOfFilesInRecon = new ConcurrentHashMap<>();
-    
-    public static final ConcurrentHashMap<String, AtomicInteger> fileReadProgressIndicator = new ConcurrentHashMap<>();    
-    public static final ConcurrentHashMap<String, AtomicInteger> fileWriteProgressIndicator = new ConcurrentHashMap<>();    
-    
-    public static final ConcurrentHashMap<String, AtomicInteger> totalRecordsToBeRead = new ConcurrentHashMap<>();    
+
+    public static final ConcurrentHashMap<String, AtomicInteger> fileReadProgressIndicator = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<String, AtomicInteger> fileWriteProgressIndicator = new ConcurrentHashMap<>();
+
+    public static final ConcurrentHashMap<String, AtomicInteger> totalRecordsToBeRead = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<String, AtomicInteger> totalReconciledToBeWritten = new ConcurrentHashMap<>();
-    
 
     public static final Map<String, ReadMutexClass> readMutexObjects = new HashMap<>();
     public static final Map<String, WriteMutexClass> writeMutexObjects = new HashMap<>();
 
     //this will be observed by observers so that a Write recon can be called when file processing is DONE
     public static final NewReconStarted newReconStarted = new NewReconStarted();
+    
+    
+    public static final Map<String, Object> reconProgress = new HashMap<>();
+    public static final Map<String, Object> reconCompleted = new HashMap<>();
+    
 
-    public static final String MUTEX = "MUTEX";
-    
-    
     //THE BELOW IS NOT BEING USED IN WORKING CODE - CAN DELETE, delete also references
     public static final ConcurrentHashMap<String, AtomicInteger> totalUnreconciledRecords = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<String, AtomicInteger> totalNumberRecordsIterated = new ConcurrentHashMap<>();
+
+    public static void resetGlobalAttributes(String reconGroupID) {
+
+        removeRecon(globalReconFileDetails, reconGroupID);
+        removeRecon(linkerFileRead, reconGroupID);
+        removeRecon(linkedFileRead, reconGroupID);
+        removeRecon(linkedFileReconciled, reconGroupID);
+        removeRecon(totalReconTimeTracker, reconGroupID);
+        removeRecon(reconDetailsStore, reconGroupID);
+
+        removeRecon(exceptionsFilesDetails, reconGroupID);
+        removeRecon(exceptionsCount, reconGroupID);
+        removeRecon(numberOfFilesInRecon, reconGroupID);
+
+        removeRecon(fileReadProgressIndicator, reconGroupID);
+        removeRecon(fileWriteProgressIndicator, reconGroupID);
+        removeRecon(totalRecordsToBeRead, reconGroupID);
+
+        removeRecon(totalReconciledToBeWritten, reconGroupID);
+        removeRecon(readMutexObjects, reconGroupID);
+        removeRecon(writeMutexObjects, reconGroupID);
+
+        removeRecon(totalUnreconciledRecords, reconGroupID);
+        removeRecon(totalNumberRecordsIterated, reconGroupID);
+
+    }
+
+    private static void removeRecon(Map<String, ?> collection, String reconGroupID) {
+
+        try {
+            if (collection != null) {
+                if (collection.containsKey(reconGroupID)) {
+
+                    collection.remove(reconGroupID);
+                }
+            }
+        } catch (UnsupportedOperationException | ClassCastException | NullPointerException exception) {
+
+            System.err.println("Error occurred while removing items from global map: " + exception.getMessage());
+            exception.printStackTrace();
+        }
+
+    }
 
     /**
      *

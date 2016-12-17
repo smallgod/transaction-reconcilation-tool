@@ -54,6 +54,8 @@ public class UploadFile extends HttpServlet implements CallBack {
      */
     protected void processRequest(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
 
+        logger.debug("Hit the UploadFile processRequest method()");
+        
         Transformer aTransformer;
 
         response.setContentType("application/json");

@@ -72,6 +72,8 @@ public class FileWriter {
     }
 
     public void writeRecordsToFile() throws MyCustomException {
+        
+        logger.debug("writeRecordsToFile method called");
 
         boolean isCalling = fileReconFileDetails.isIsCalling();
 
@@ -338,10 +340,12 @@ public class FileWriter {
      * @throws MyCustomException
      */
     private void writeCallReconFiles() throws MyCustomException {
+        
+        logger.debug("writeCallReconFiles method called!");
 
         final String reconGroupID = fileReconFileDetails.getReconGroupID();
         final String callingFilesString = fileReconFileDetails.getCallingFiles(); //this is a JSON string map {"232-222":"", "
-        final Map<String, String> callingFiles = GeneralUtils.convertFromJson(callingFilesString, stringMapType);
+        final Map<String, Object> callingFiles = GeneralUtils.convertFromJson(callingFilesString, stringMapType);
         final Collection<ReconTransactionsTable> recordsList = DBManager.getRecordsEqualToPropertyValue(ReconTransactionsTable.class, "reconGroupID", reconGroupID);
         final Collection<ReportDetails> reportFileDetailsList = DBManager.retrieveAllDatabaseRecords(ReportDetails.class, "reconGroupID", reconGroupID);
 

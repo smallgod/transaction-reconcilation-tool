@@ -58,6 +58,8 @@ public class Progress extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        logger.debug("Hit the Progress processRequest method()");
+
         response.setContentType("application/json");
 
         //String recongroupid = request.getParameter("reconid"); //5544
@@ -99,153 +101,193 @@ public class Progress extends HttpServlet {
             //throw new Mycustom
         }
 
-        
-        ReconciliationDetails reconDetails = GlobalAttributes.reconDetailsStore.get(recongroupid);
-        String totalNumOfFilesInRecon = String.valueOf(GlobalAttributes.numberOfFilesInRecon.get(recongroupid));
-                
-        int totalRecordsInThisRecon = GlobalAttributes.totalRecordsToBeRead.get(recongroupid).get();
-        int recordsSoFarRead = GlobalAttributes.fileReadProgressIndicator.get(recongroupid).get();        
-        
-        int recordsSoFarWritten = GlobalAttributes.fileWriteProgressIndicator.get(recongroupid).get();
-        int totalReconciledRecordsInDB = GlobalAttributes.totalReconciledToBeWritten.get(recongroupid).get();
-        //int actualTotalProcessed = GlobalAttributes.totalUnreconciledRecords.get(recongroupid).get();
-        int exceptionsCount = GlobalAttributes.exceptionsCount.get(recongroupid).get();
-        StartEndTime startEndTime = GlobalAttributes.totalReconTimeTracker.get(recongroupid);
-
-        DateTime startTime = null;
-        String timeStarted = null;
-        
-        if (startEndTime != null) {
-            
-            startTime = startEndTime.getStartTime();
-            timeStarted = GeneralUtils.formatDateTime(startTime, DateTimeZones.KAMPALA.getValue(), "dd-MM-yyyy HH:mm:ss");
-        }
-
-        logger.info("START TIME :::: " + startTime);
-
-        String timeEnded;
-
-        int exceptionRate;
-        int fileReadPercentProgress;
-        int fileWritePercentProgress;
-        int totalProgress;
-        float roundProgress;
-
-        if (totalRecordsInThisRecon <= 0) {
-            logger.error("total Rrecods sum cannot be zero or less");
-            return;
-        }
-
-        try {
-
-            fileReadPercentProgress = (recordsSoFarRead * READ_PERCENTAGE) / totalRecordsInThisRecon;
-
-            if (totalReconciledRecordsInDB == 0) {
-                fileWritePercentProgress = 0;
-                exceptionRate = 0;
-            } else {
-                fileWritePercentProgress = (recordsSoFarWritten * WRITE_PERCENTAGE) / totalReconciledRecordsInDB;
-                exceptionRate = (exceptionsCount * 100) / totalReconciledRecordsInDB; //we only start counting exceptions when writing to files
-                
-                logger.info("fileWritePercentProgress   :: " + fileWritePercentProgress);
-                logger.info("recordsSoFarWritten        :: " + recordsSoFarWritten);
-                logger.info("totalReconciledRecordsInDB :: " + totalReconciledRecordsInDB);
-            
-            }
-
-            logger.info("RecordsProcessedProgress :: " + fileReadPercentProgress);
-            logger.info("FileWrite Progress       :: " + fileWritePercentProgress);
-            
-            totalProgress = fileReadPercentProgress   + fileWritePercentProgress;
-            
-            logger.info("totalProgress            :: " + totalProgress);
-
-            roundProgress = Math.round(totalProgress);
-
-        } catch (ArithmeticException ex) {
-            logger.error("arithmetic exception trying to get percentage progress: " + ex.getMessage());
-            return;
-        }
-
+        boolean reconCompleted = Boolean.valueOf((String)GlobalAttributes.reconCompleted.get(recongroupid));
         //{{"exception_files":{"iscalling":true, "basic_recon":{"exceptionsonly":"filename", "alltxns":"filename"}, "call_recon":{"222-224":"filename", "224-222":"filename", "221-244":"filename", "244-221":"filename"}}}}
         ReconProgressWrapper reconWrapper = new ReconProgressWrapper();
         ReconProgress reconProgress = new ReconProgress();
 
-        Map<String, Object> exceptionFiles = new HashMap<>();
+        if (reconCompleted) {
+            
+            logger.info("Recon already completed!!!");
+            reconProgress = (ReconProgress)GlobalAttributes.reconProgress.get(recongroupid);
+            
+        } else {
+            
+            logger.info("Recon NOT YET completed!!!");
 
-        reconProgress.setRecordsProcessed(String.valueOf(totalRecordsInThisRecon));
-        reconProgress.setNumOfFiles(totalNumOfFilesInRecon);
-        reconProgress.setPercentage(String.valueOf(totalProgress));
+            ReconciliationDetails reconDetails = GlobalAttributes.reconDetailsStore.get(recongroupid);
+            String totalNumOfFilesInRecon = String.valueOf(GlobalAttributes.numberOfFilesInRecon.get(recongroupid));
 
-        //reconProgress.setFinalReconFileName(allRecordsPathFromFolder);
-        //reconProgress.setExceptionsFilePathName(exceptionsPathFromFolder);
-        reconProgress.setTimeStarted(timeStarted);
-        reconProgress.setTestString("rounded progress: " + roundProgress + ", compound-processed: " + recordsSoFarRead + ", compounded: " + totalRecordsInThisRecon + ", written: " + recordsSoFarWritten + ", recordsInDB: " + totalReconciledRecordsInDB);
+            int totalRecordsInThisRecon = GlobalAttributes.totalRecordsToBeRead.get(recongroupid).get();
+            int recordsSoFarRead = GlobalAttributes.fileReadProgressIndicator.get(recongroupid).get();
 
-        logger.info(">>>>>>>>>>>>> start TIME <<<<<<<<<<<<<< " + startTime);
+            int recordsSoFarWritten = GlobalAttributes.fileWriteProgressIndicator.get(recongroupid).get();
+            int totalReconciledRecordsInDB = GlobalAttributes.totalReconciledToBeWritten.get(recongroupid).get();
+            //int actualTotalProcessed = GlobalAttributes.totalUnreconciledRecords.get(recongroupid).get();
+            int exceptionsCount = GlobalAttributes.exceptionsCount.get(recongroupid).get();
+            StartEndTime startEndTime = GlobalAttributes.totalReconTimeTracker.get(recongroupid);
 
-        if (totalProgress == COMPLETED_PERCENTAGE) {
+            DateTime startTime = null;
+            String timeStarted = null;
 
-            DateTime endTime = null;
             if (startEndTime != null) {
-                endTime = startEndTime.getEndTime();
+
+                startTime = startEndTime.getStartTime();
+                timeStarted = GeneralUtils.formatDateTime(startTime, DateTimeZones.KAMPALA.getValue(), "dd-MM-yyyy HH:mm:ss");
             }
 
-            logger.info("End TIME :::: " + endTime);
+            logger.info("START TIME herere:::: " + startTime);
 
-            timeEnded = GeneralUtils.formatDateTime(endTime, DateTimeZones.KAMPALA.getValue(), "dd-MM-yyyy HH:mm:ss");
+            String timeEnded;
 
-            reconProgress.setStatus(ReconStatus.COMPLETED.getValue());
-            reconProgress.setTimeEnded(timeEnded);
-            reconProgress.setTimeTaken(GeneralUtils.timeTakenToNow(startTime, endTime));
-            reconProgress.setTotalFinalRecords(String.valueOf(recordsSoFarWritten));
-            reconProgress.setExceptionRate(exceptionRate + "%");
-            reconProgress.setExceptionCount(String.valueOf(exceptionsCount));
+            int exceptionRate;
+            int fileReadPercentProgress;
+            int fileWritePercentProgress;
+            int totalProgress;
+            float roundProgress;
 
-            if (reconDetails.isIsCalling()) {
+            if (totalRecordsInThisRecon <= 0) {
+                logger.error("total Recods sum cannot be zero or less");
+                return;
+            }
 
-                Map<String, String> callRecon = new HashMap<>();
-                List<ExceptionsFile> exceptionFileList = GlobalAttributes.exceptionsFilesDetails.get(recongroupid);
-                
-                for (ExceptionsFile exceptionFile : exceptionFileList) {
+            try {
 
-                    String fileID = exceptionFile.getFileID();
+                fileReadPercentProgress = (recordsSoFarRead * READ_PERCENTAGE) / totalRecordsInThisRecon;
 
-                    ReportDetails reportDetails = exceptionFile.getReportDetails();
-                    String filePath = reportDetails.getExceptionsFilePath();
-                    String pathFromFolder = filePath.substring(filePath.lastIndexOf('/') + 1);
+                if (totalReconciledRecordsInDB == 0) {
+                    fileWritePercentProgress = 0;
+                    exceptionRate = 0;
+                } else {
+                    fileWritePercentProgress = (recordsSoFarWritten * WRITE_PERCENTAGE) / totalReconciledRecordsInDB;
+                    exceptionRate = (exceptionsCount * 100) / totalReconciledRecordsInDB; //we only start counting exceptions when writing to files
 
-                    callRecon.put(fileID, pathFromFolder);
+                    logger.info("fileWritePercentProgress   :: " + fileWritePercentProgress);
+                    logger.info("recordsSoFarWritten        :: " + recordsSoFarWritten);
+                    logger.info("totalReconciledRecordsInDB :: " + totalReconciledRecordsInDB);
+
                 }
-                exceptionFiles.put("iscalling", Boolean.TRUE);
-                exceptionFiles.put("call_recon", callRecon);
+
+                logger.info("totalReconciledRecordsInDB: " + totalReconciledRecordsInDB);
+                logger.info("RecordsProcessedProgress  : " + fileReadPercentProgress);
+                logger.info("FileWrite Progress        : " + fileWritePercentProgress);
+
+                totalProgress = fileReadPercentProgress + fileWritePercentProgress;
+
+                logger.info("totalProgress            :: " + totalProgress);
+
+                roundProgress = Math.round(totalProgress);
+
+            } catch (ArithmeticException ex) {
+                logger.error("arithmetic exception trying to get percentage progress: " + ex.getMessage());
+                return;
+            }
+
+            Map<String, Object> exceptionFiles = new HashMap<>();
+
+            reconProgress.setRecordsProcessed(String.valueOf(totalRecordsInThisRecon));
+            reconProgress.setNumOfFiles(totalNumOfFilesInRecon);
+            reconProgress.setPercentage(String.valueOf(totalProgress));
+
+            //reconProgress.setFinalReconFileName(allRecordsPathFromFolder);
+            //reconProgress.setExceptionsFilePathName(exceptionsPathFromFolder);
+            reconProgress.setTimeStarted(timeStarted);
+            reconProgress.setTestString("rounded progress: " + roundProgress + ", compound-processed: " + recordsSoFarRead + ", compounded: " + totalRecordsInThisRecon + ", written: " + recordsSoFarWritten + ", recordsInDB: " + totalReconciledRecordsInDB);
+
+            logger.info(">>>>>>>>>>>>> start TIME <<<<<<<<<<<<<< " + startTime);
+
+            if (totalProgress == COMPLETED_PERCENTAGE) {
+
+                logger.debug("Praise the Lord, ReconProgress is: " + totalProgress + "%");
+
+                DateTime endTime = null;
+                if (startEndTime != null) {
+                    endTime = startEndTime.getEndTime();
+                }
+
+                logger.info("End TIME :::: " + endTime);
+
+                timeEnded = GeneralUtils.formatDateTime(endTime, DateTimeZones.KAMPALA.getValue(), "dd-MM-yyyy HH:mm:ss");
+
+                reconProgress.setStatus(ReconStatus.COMPLETED.getValue());
+                reconProgress.setTimeEnded(timeEnded);
+                reconProgress.setTimeTaken(GeneralUtils.timeTakenToNow(startTime, endTime));
+                reconProgress.setTotalFinalRecords(String.valueOf(recordsSoFarWritten));
+                reconProgress.setExceptionRate(exceptionRate + "%");
+                reconProgress.setExceptionCount(String.valueOf(exceptionsCount));
+
+                if (reconDetails.isIsCalling()) {
+
+                    logger.debug("this is a callRecon, so return 2 exception files");
+
+                    Map<String, String> callRecon = new HashMap<>();
+                    List<ExceptionsFile> exceptionFileList = GlobalAttributes.exceptionsFilesDetails.get(recongroupid);
+
+                    for (ExceptionsFile exceptionFile : exceptionFileList) {
+
+                        String fileID = exceptionFile.getFileID();
+
+                        ReportDetails reportDetails = exceptionFile.getReportDetails();
+                        String filePath = reportDetails.getExceptionsFilePath();
+                        String pathFromFolder = filePath.substring(filePath.lastIndexOf('/') + 1);
+
+                        callRecon.put(fileID, pathFromFolder);
+                    }
+                    exceptionFiles.put("iscalling", Boolean.TRUE);
+                    exceptionFiles.put("call_recon", callRecon);
+
+                } else {
+
+                    logger.debug("this is a BasicRecon, so return 1 exception file");
+
+                    String allRecordsFilePath = GlobalAttributes.allRecordsAbsFinalFilePath;
+                    String exceptionsFilePath = GlobalAttributes.OnlyExceptionsAbsFinalFilePath;
+
+                    String allPathFromFolder = allRecordsFilePath.substring(allRecordsFilePath.lastIndexOf('/') + 1);
+                    String exceptionsPathFromFolder = exceptionsFilePath.substring(exceptionsFilePath.lastIndexOf('/') + 1);
+
+                    Map<String, String> basicRecon = new HashMap<>();
+                    basicRecon.put("allfilepath", allPathFromFolder);
+                    basicRecon.put("exceptionsfilepath", exceptionsPathFromFolder);
+
+                    exceptionFiles.put("iscalling", Boolean.FALSE);
+                    exceptionFiles.put("basic_recon", basicRecon);
+
+                }
+
+                reconProgress.setExceptionFiles(exceptionFiles);
+
+                //Store completed reconProgresses, because the client might keep calling for progress
+                GlobalAttributes.reconProgress.put(recongroupid, reconProgress);
+                GlobalAttributes.reconCompleted.put(recongroupid, String.valueOf(Boolean.TRUE));
+                
+                
+                logger.info("Resetting the global maps for ID: " + recongroupid);
+            GlobalAttributes.resetGlobalAttributes(recongroupid);
+            logger.info("Done resetting Global attributes");
+                
 
             } else {
-
-                String allRecordsFilePath = GlobalAttributes.allRecordsAbsFinalFilePath;
-                String exceptionsFilePath = GlobalAttributes.OnlyExceptionsAbsFinalFilePath;
-
-                String allPathFromFolder = allRecordsFilePath.substring(allRecordsFilePath.lastIndexOf('/') + 1);
-                String exceptionsPathFromFolder = exceptionsFilePath.substring(exceptionsFilePath.lastIndexOf('/') + 1);
-
-                Map<String, String> basicRecon = new HashMap<>();
-                basicRecon.put("allfilepath", allPathFromFolder);
-                basicRecon.put("exceptionsfilepath", exceptionsPathFromFolder);
-
-                exceptionFiles.put("iscalling", Boolean.FALSE);
-                exceptionFiles.put("basic_recon", basicRecon);
-
+                reconProgress.setStatus(ReconStatus.INPROGRESS.getValue());
+                reconProgress.setTimeTaken(GeneralUtils.timeTakenToNow(startTime));
+                reconProgress.setTimeEnded("n/a");
+                reconProgress.setTotalFinalRecords("n/a");
+                reconProgress.setExceptionRate("n/a");
+                reconProgress.setExceptionCount("n/a");
             }
 
-            reconProgress.setExceptionFiles(exceptionFiles);
+            //for debugging purpose      
+            if (recordsSoFarWritten == totalReconciledRecordsInDB) {
 
-        } else {
-            reconProgress.setStatus(ReconStatus.INPROGRESS.getValue());
-            reconProgress.setTimeTaken(GeneralUtils.timeTakenToNow(startTime));
-            reconProgress.setTimeEnded("n/a");
-            reconProgress.setTotalFinalRecords("n/a");
-            reconProgress.setExceptionRate("n/a");
-            reconProgress.setExceptionCount("n/a");
+                if (COMPLETED_PERCENTAGE != 100) {
+                    logger.error("Something wrong happenend - all records written but percentage not 100%");
+                } else {
+                    logger.info("we are GOOOOOD!!");
+                }
+            }
+            
+            
+
         }
 
         logger.info("We GOT herererererererre>>>>>>>>>>>>>>>>");
@@ -256,18 +298,11 @@ public class Progress extends HttpServlet {
 
         try {
             GeneralUtils.writeResponse(response, jsonResponse);
+
+            logger.debug("Progress Response written back: " + jsonResponse);
+
         } catch (MyCustomException ex) {
             logger.error("error sending progress indicator response: " + ex.getErrorDetails());
-        }
-
-        //for debugging purpose      
-        if (recordsSoFarWritten == totalReconciledRecordsInDB) {
-
-            if (COMPLETED_PERCENTAGE != 100) {
-                logger.error("Something wrong happenend - all records written but percentage not 100%");
-            } else {
-                logger.info("we are GOOOOOD!!");
-            }
         }
 
 //        boolean test1 = Boolean.FALSE, test2 = Boolean.FALSE;

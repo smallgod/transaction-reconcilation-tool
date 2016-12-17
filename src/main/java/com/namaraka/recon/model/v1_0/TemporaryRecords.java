@@ -32,9 +32,9 @@ public class TemporaryRecords extends BaseModel implements Auditable, Processeab
     @Column(name = "row_details", length = 10000) //might want to change this - what if the data is too long
     private String rowDetails;
 
-    public TemporaryRecords(String generatedID, boolean isFailedOrSuccessful, String fileID, String rowDetails) {
+    public TemporaryRecords(String generatedID, boolean isNonException, String fileID, String rowDetails) {
         this.generatedID = generatedID;
-        this.isFailedOrSuccessful = isFailedOrSuccessful;
+        this.isFailedOrSuccessful = isNonException;
         this.fileID = fileID;
         this.rowDetails = rowDetails;
     }

@@ -1012,25 +1012,27 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
 
         logger.info(GeneralUtils.toPrettyJsonFormat(fileDetailsJsonString));
 
-        ReportDetails reportFileDetails = new ReportDetails();
+        ReportDetails reportDetailsObj = new ReportDetails();
 
         Map<String, String> fileDetails = GeneralUtils.convertFromJson(fileDetailsJsonString, stringMapType);
 
         for (String key : fileDetails.keySet()) {
-            buildReportDetailsInstanceHelper(reportFileDetails, key, fileDetails.get(key));
+
+            String value = fileDetails.get(key);
+            buildReportDetailsInstanceHelper(reportDetailsObj, key, value);
         }
 
-        if (reportFileDetails.getFileReconProgress() == FileReconProgressEnum.NEW) {
-            reportFileDetails.setFileReconProgress(FileReconProgressEnum.INPROGRESS);//set file processing to IN-PROGRESS
-        } else if (reportFileDetails.getFileReconProgress() == FileReconProgressEnum.EDITED) { //edited file
+        if (reportDetailsObj.getFileReconProgress() == FileReconProgressEnum.NEW) {
+            reportDetailsObj.setFileReconProgress(FileReconProgressEnum.INPROGRESS);//set file processing to IN-PROGRESS
+        } else if (reportDetailsObj.getFileReconProgress() == FileReconProgressEnum.EDITED) { //edited file
 
         }
 
-        String reconTitle = reportFileDetails.getReconTitle();
+        String reconTitle = reportDetailsObj.getReconTitle();
         String folderName = buildUniqueNameHelper(reconTitle);
-        reportFileDetails.setReconFolderName(folderName);
+        reportDetailsObj.setReconFolderName(folderName);
 
-        return reportFileDetails;
+        return reportDetailsObj;
     }
 
     /**
@@ -1098,7 +1100,6 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
                 if (!(jsonValue == null || jsonValue.trim().isEmpty())) {
                     hasStatus = Boolean.valueOf(jsonValue);
                 }
-
                 reportDetails.setHasStatus(hasStatus);
                 break;
 
@@ -1134,9 +1135,10 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
                 reportDetails.setReconTitle(jsonValue);
                 break;
 
-//            case FILEPATH:
-//                reportDetails.setAbsCompleteFilePath(jsonValue);
-//                break;
+            case FILEPATH:
+                logger.debug("FilePath: " + jsonValue);
+                //reportDetails.setAbsCompleteFilePath(jsonValue);
+                break;
             case AMOUNT_COL_NAME:
                 reportDetails.setAmountColumnName(jsonValue);
                 break;
@@ -1146,7 +1148,7 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
                 break;
 
             default:
-                logger.warn("unknown fileDetails jsonKey: " + jsonKey);
+                logger.warn("Unknown ReportfileDetails jsonKey: " + jsonKey);
         }
 
         return reportDetails;
@@ -1245,6 +1247,9 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
 
         if (!reconDetailsList.isEmpty()) {
             reconProgress = reconDetailsList.get(0);
+
+            logger.debug("Got reconProgress as: " + reconProgress.getValue() + " for reconGroupID: " + reconGroupID);
+
         } else {
             logger.warn("Recon Group corresponding to ID: " + reconGroupID + " doesn't exist in the DB");
         }
@@ -1261,7 +1266,11 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
      */
     private static boolean writeFileHelper(boolean isFileProcessingDone, ReconciliationDetails reconDetails) throws MyCustomException, IOException {
 
+        logger.debug("writeFdileHelper called, isFileProcessingDone == " + isFileProcessingDone);
+
         if (isFileProcessingDone) {
+
+            logger.debug("FileProcessing is DONE, now set ReconStatus to INPROGRESS");
 
             ReconciliationDetails reconciliationDetails = updateReconProgress(reconDetails, ReconStatus.INPROGRESS);
 
@@ -1301,7 +1310,7 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
         GlobalAttributes.fileReadProgressIndicator.remove(reconID);
         GlobalAttributes.fileWriteProgressIndicator.remove(reconID);
         GlobalAttributes.totalUnreconciledRecords.remove(reconID);
-        //GlobalAttributes.exceptionsCount.remove(reconID);
+        GlobalAttributes.exceptionsCount.remove(reconID);
         GlobalAttributes.totalRecordsToBeRead.remove(reconID);
 
         GlobalAttributes.linkerFileRead.remove(reconID);
@@ -1314,6 +1323,8 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
 
         //also delete from the DB tables
     }
+    
+    
 
     public static void addReconDetailsToGlobalMaps(String reconID, ReportDetails reportFileDetails) {
 
@@ -1343,6 +1354,14 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
         if (hashMap.get(reconID) == null) {
             hashMap.put(reconID, new AtomicInteger(0));
         }
+    }
+    
+    public static void initGlobalMap(Map<String, Boolean> map , String reconID, Boolean value){
+        
+        if(map == null){
+            map = new HashMap<>();
+        }
+        map.put(reconID, value);
     }
 
     /**
@@ -2245,6 +2264,35 @@ public class GeneralUtils { //we need to do a singleton pattern for this class
 
         return (new ArrayList<>(listToConvert));
 
+    }
+
+    /**
+     * 
+     * @param <T>
+     * @param collectionToConvert
+     * @return 
+     */
+    public static <T> List<T> convertCollectionToList(Collection<T> collectionToConvert) {
+
+        List<T> list = new ArrayList<>(collectionToConvert);
+
+        return list;
+
+    }
+    
+    /**
+     * 
+     * @param str
+     * @param delimeter
+     * @return 
+     */
+    public static List<String> convertDelimeteredStringToList(String str, char delimeter){
+        
+        List<String> items = Arrays.asList(str.split("\\s*" + delimeter + "\\s*"));
+        
+        
+       return items;
+        
     }
 
     /**

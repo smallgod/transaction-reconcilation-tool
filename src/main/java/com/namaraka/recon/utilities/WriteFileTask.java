@@ -47,6 +47,9 @@ public class WriteFileTask implements Runnable {
 
     private static final Type collectionType = new TypeToken<Collection<String>>() {
     }.getType();
+    
+    private static final Type stringMapType = new TypeToken<Map<String, Object>>() {
+    }.getType();
 
     private final ReconciliationDetails reconDetails;
 
@@ -71,42 +74,86 @@ public class WriteFileTask implements Runnable {
         }
     }
 
-    void writeFiles() throws MyCustomException {
+    public void writeFiles() throws MyCustomException {
 
         logger.info("Thread waiting at synchronized block " + Thread.currentThread().getName() + " AND reconstatus is: " + reconDetails.getReconStatus());
 
+            String reconGroupID = reconDetails.getReconGroupID();
+            ReconStatus updatedReconStatus = GeneralUtils.getReconProgressFromDB(reconGroupID);
+            boolean isFileProcessingDone = GeneralUtils.isFileProcessingDone(reconGroupID, Boolean.TRUE);
+            
+            if (!isFileProcessingDone || updatedReconStatus != ReconStatus.NEW) {
+
+                logger.info("Release resources immediately, another observer is already writing OR the next observer will try to handle this write request");
+                return; //only continue if all files are processed && reocn is not in progress
+            
+            }
         //synchronised can start HERE
-        synchronized (GlobalAttributes.MUTEX) {
+        synchronized (GlobalAttributes.WRITE_MUTEX) {
+            
+            logger.info("Now inside synchronzed block: "  + Thread.currentThread().getName() + " AND reconstatus is: " + reconDetails.getReconStatus() );
             //we will lock here on the same MUTEX as the 
             //READ MUTEX because this block should only run at the end of any READ file task
             //No point in this method running before a READ File tast is INcomplete
             //get latest reconobj from DB
 
-            String reconGroupID = reconDetails.getReconGroupID();
-
-            //fetch updated recon progress
-            ReconStatus updatedReconStatus = GeneralUtils.getReconProgressFromDB(reconGroupID);
-
-            boolean isFileProcessingDone = GeneralUtils.isFileProcessingDone(reconGroupID, Boolean.TRUE);
+            
+            //Fetch updated Values
+            reconGroupID = reconDetails.getReconGroupID();
+            updatedReconStatus = GeneralUtils.getReconProgressFromDB(reconGroupID);
+            isFileProcessingDone = GeneralUtils.isFileProcessingDone(reconGroupID, Boolean.TRUE);
+            
+            logger.info("Updated ReconStatus  : " + updatedReconStatus);
+            logger.info("isFileProcessingDone : " + isFileProcessingDone);
 
             // if (!isFileProcessingDone || updatedReconStatus == ReconStatus.INPROGRESS) {
             if (!isFileProcessingDone || updatedReconStatus != ReconStatus.NEW) {
 
-                logger.debug("Method will return now b'se, another observer is already writing OR the next observer will try to handle this write request");
+                logger.info("Method will return now b'se, another observer is already writing OR the next observer will try to handle this write request");
                 return; //only continue if all files are processed && reocn is not in progress
+            
+            } else{
+                
+                logger.debug("Continuing to setReconStatus to INPROGRESS!!");
             }
+            
+            logger.info("Going to be doing some File writing in a few, so Setting ReconStatus to INPROGRESS, dont interfere");
 
             reconDetails.setReconStatus(ReconStatus.INPROGRESS);
             //update
             DBManager.updateDatabaseModel(reconDetails);
+            
+            
+            logger.debug("DB reconStatus updated to INPROGRESS, yeyyyyyyy !!");
 
             String callingFilesJson = reconDetails.getCallingFiles();
-
-            List<String> callingFilesList = GeneralUtils.convertFromJson(callingFilesJson, collectionType);
+            
+            //List<String> callingFilesList = GeneralUtils.convertFromJson(callingFilesJson, collectionType);
+            
+            Map<String, Object> callingFilesMap = GeneralUtils.convertFromJson(callingFilesJson, stringMapType);
+            Collection<String> callingFilesMapKeys = callingFilesMap.keySet();
+            
+            List<String> callingFilesList = new ArrayList<>();
+            for(String key : callingFilesMapKeys){
+                
+                List<String> list = GeneralUtils.convertDelimeteredStringToList(key, '-');
+                callingFilesList.addAll(list);
+            }
+            
+            //List<String> callingFilesList = GeneralUtils.convertCollectionToList(callingFilesMapKeys);
+            
+            logger.info("done coversion from JSON, callingFilesList size is: " + callingFilesList.size() + " callingFilesList: " + callingFilesList);
 
             final Collection<ReportDetails> exceptionsReportFileDetailsList = DBManager.retrieveAllDatabaseRecords(ReportDetails.class, "fileID", callingFilesList);
             final int numOfFiles = (int) DBManager.countRecords(ReportDetails.class, "reconGroupID", reconGroupID, "isToBeReconciled", Boolean.TRUE);
 
+            logger.info("exceptionsReportFileDetailsList size() is: " + exceptionsReportFileDetailsList.size());
+            
+            if(exceptionsReportFileDetailsList.isEmpty()){
+                logger.warn("Didnt get any exceptions using callingFilesList: " + callingFilesList  + ", exceptionsReportFileDetailsList.size() == 0 ");
+            }
+            logger.info("numOfFiles retrieved == " + numOfFiles + " Going to set GlobalAttributes.numberOfFilesInRecon and recongroupid: " + reconGroupID);
+            
             /*final int totalExceptions = DBManager.countRecords(TemporaryRecords.class, "fileID", callingFilesList);
              final Collection<?> numRecordsList = DBManager.fetchOnlyColumnWithCollection(ReportDetails.class, "numberOfRecords", "fileID", callingFilesList);
             
@@ -115,6 +162,8 @@ public class WriteFileTask implements Runnable {
              totalRecords += (int) numRecord;
              }*/
             GlobalAttributes.setNewValue(reconGroupID, numOfFiles, GlobalAttributes.numberOfFilesInRecon); //num of files in this recon
+            
+            logger.info("GlobalAttributes.numberOfFilesInRecon, set to new value: " + numOfFiles + ", about to bulf-fetch Temporary Records");
 
             List<TemporaryRecords> allRecords = DBManager.bulkFetchSelectedColumns(TemporaryRecords.class);
             //List<TemporaryRecords> allRecords = DBManager.bulkFetchSelectedColumns(TemporaryRecords.class, fileID);
@@ -126,6 +175,7 @@ public class WriteFileTask implements Runnable {
 
             Map<String, Map<String, String>> fileIDAndGeneratedIDs = new HashMap<>();
 
+            logger.info("Going to iterate over Temporary records");
             for (TemporaryRecords tempRecord : allRecords) {
 
                 String generatedID = tempRecord.getGeneratedID();
@@ -136,9 +186,9 @@ public class WriteFileTask implements Runnable {
 
                 if (idCount == numOfFiles) {
 
-                    boolean isFailedOrSuccessful = tempRecord.isIsFailedOrSuccessful();
+                    boolean isNonException = tempRecord.isIsFailedOrSuccessful();
 
-                    if (isFailedOrSuccessful) {
+                    if (isNonException) {
                         setOfNonExceptionIDs.add(generatedID);
                     }
                 }
@@ -152,15 +202,25 @@ public class WriteFileTask implements Runnable {
             final Set<String> setOfAllFileExceptionIDs = GeneralUtils.complement(setOfAllIDs, setOfNonExceptionIDs);
 
             int numOfExceptions = setOfAllFileExceptionIDs.size();
-
-            //these are the records that need to be written to the files - same as the number of exceptions since we are writing only exceptins
-            GlobalAttributes.setNewValue(reconGroupID, numOfExceptions, GlobalAttributes.totalReconciledToBeWritten);
+            
+           
+            //these are the records that need to be written to the files - same as the number of exceptions since we are writing only exceptions
+            //GlobalAttributes.setNewValue(reconGroupID, numOfExceptions, GlobalAttributes.totalReconciledToBeWritten);
 
             //total number of exceptions in this file
             GlobalAttributes.setNewValue(reconGroupID, numOfExceptions, GlobalAttributes.exceptionsCount);
+            
+            logger.info("Total Files records count    : " + setOfAllIDs.size());
+            logger.info("Total exception records count: " + numOfExceptions);
+            //logger.debug("GlobalAttributes.totalReconciledToBeWritten same as total exceptions records count: " + GlobalAttributes.totalReconciledToBeWritten);
+            logger.info("GlobalAttributes.exceptionsCount same as total exceptions records count           : " + GlobalAttributes.exceptionsCount);
 
             List<ExceptionsFile> exceptionFiles = new ArrayList<>();
+            
+            int myNumOfRecordsTester = 0;
             for (ReportDetails reportFileDetails : exceptionsReportFileDetailsList) {
+                
+                logger.info("Now iterating through exceptionsFileDetailList, fileID: " + reportFileDetails.getFileID());
 
                 //totalRecords += reportFileDetails.getNumberOfRecords();
                 //file details
@@ -168,6 +228,7 @@ public class WriteFileTask implements Runnable {
                 int numOfFileRecords = reportFileDetails.getNumberOfRecords();
                 String exceptionsFilePath = reportFileDetails.getExceptionsFilePath();
 
+                myNumOfRecordsTester += numOfFileRecords;
                 //exceptions header-column data
                 String headerColNamesJson = reportFileDetails.getFileHeaderNames();
                 String[] headerColumns = GeneralUtils.convertFromJson(headerColNamesJson, stringArrayType);
@@ -185,6 +246,8 @@ public class WriteFileTask implements Runnable {
                     if (rowDetails != null) {
                         exceptions.add(rowDetails);
                         numOfFileExceptions++;
+                        
+                        GlobalAttributes.increment(reconGroupID, GlobalAttributes.totalReconciledToBeWritten);
                     }
                 }
 
@@ -205,6 +268,8 @@ public class WriteFileTask implements Runnable {
 
                 File exceptionFile = new File(exceptionsFilePath);
                 CSVWriter writer = null;
+                
+                logger.debug("Now going to start writing exceptions file, path: " + exceptionFile.getAbsolutePath());
 
                 try {
                     exceptionFile.createNewFile();
@@ -250,10 +315,31 @@ public class WriteFileTask implements Runnable {
                 exceptionFiles.add(exceptionsFile);
 
             }
+            
+            logger.debug("Total number of all file records as gotten from reportDetails objects (reportFileDetails.getNumberOfRecords()) : " + myNumOfRecordsTester);
+            logger.debug("Total number of all file records as put in the Temporary DB, should be same as above                           : " + setOfAllIDs.size());
 
             //set END-Time
             GlobalAttributes.setReconTimeTracker(Boolean.FALSE, reconGroupID, GlobalAttributes.totalReconTimeTracker);
             GlobalAttributes.exceptionsFilesDetails.put(reconGroupID, exceptionFiles);
+            
+            logger.info("updating Recon in DB to Completed, reconID - " + reconGroupID);
+           reconDetails.setReconStatus(ReconStatus.COMPLETED);
+            DBManager.updateDatabaseModel(reconDetails);
+            
+            logger.info("Unregistering all Observers now...");
+            GlobalAttributes.newReconStarted.unregisterAllObservers();
+            
+            //empty DBs --- this is very bad but a hack to make things work for now
+            //DBManager.deleteAllRecords("temporary_records");
+            //DBManager.deleteAllRecords("recon_details_entity");
+            
+            //logger.info("Resetting the global maps for ID: " + reconGroupID);
+            //GlobalAttributes.resetGlobalAttributes(reconGroupID);
+            //logger.info("Done resetting Global attributes");
         }
+        
+        logger.info("Thread is NOW out of synchronized block " + Thread.currentThread().getName() + " AND reconstatus is: " + reconDetails.getReconStatus());
+
     }
 }
