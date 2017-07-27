@@ -471,7 +471,7 @@ public class ReadFileTask implements Runnable, FileProcessingObserver {
 
     }
 
-    @Override
+    @Override //used for attaching this observer to the subject being observed
     public void setSubject(FileProcessingObserved subject) {
         this.newReconObserved = subject;
     }
